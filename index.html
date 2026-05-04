@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WOLF．DIARY</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#edeae4" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+  <!-- ══════════ LOGIN OVERLAY ══════════ -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <div class="login-brand">🐺 WOLF．DIARY</div>
+      <h2 class="login-title">你是誰？</h2>
+      <p class="login-hint">輸入一個名字，之後在其他裝置用同樣的名字就能找回你的日記。</p>
+      <input class="field-input login-input" type="text" id="loginNickname" placeholder="你的名字…" maxlength="30" />
+      <button class="btn btn-primary login-btn" id="loginBtn">開始書寫</button>
+    </div>
+  </div>
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><span class="brand-name">🐺WOLF．DIARY🐾</span></div>
+    <ul class="nav-list">
+      <li><button class="nav-btn active" data-root="home"><span class="nav-icon">⌂</span><span class="nav-label">主畫面</span></button></li>
+      <li><button class="nav-btn" data-root="search"><span class="nav-icon">⌕</span><span class="nav-label">搜尋</span></button></li>
+      <li><button class="nav-btn" data-root="stats"><span class="nav-icon">◈</span><span class="nav-label">統計</span></button></li>
+      <li><button class="nav-btn" data-root="settings"><span class="nav-icon">⚙</span><span class="nav-label">系統設定</span></button></li>
+    </ul>
+    <div class="sidebar-user" id="sidebarUser"></div>
+    <div class="sidebar-footer">
+      <span class="sidebar-date" id="sidebarDate"></span>
+    </div>
+  </nav>
+
+  <!-- ══════════ PAGE STACK ══════════ -->
+  <div class="page-stack">
+
+    <!-- ROOT: 主畫面 -->
+    <div class="page page-root active" id="page-home">
+      <div class="page-inner">
+        <div class="home-header">
+          <div>
+            <h1 class="panel-title">主畫面</h1>
+            <p class="panel-subtitle" id="homeDateLine">—</p>
+          </div>
+          <button class="btn-new-entry" id="btnNewEntry"><span class="btn-new-icon">✚</span> 新增日記</button>
+        </div>
+        <div class="home-section">
+          <div class="home-section-header"><span class="home-section-label">今天</span></div>
+          <div id="homeTodayCards">
+            <div class="home-unwritten" id="homeUnwritten"><span class="home-unwritten-text">今天還沒有日記</span></div>
+          </div>
+        </div>
+        <div class="home-stats-row" id="homeStatsRow" style="display:none;">
+          <div class="home-stat"><span class="home-stat-value" id="statStreak">—</span><span class="home-stat-label">連續天數</span></div>
+          <div class="home-stat-divider"></div>
+          <div class="home-stat"><span class="home-stat-value" id="statTotal">—</span><span class="home-stat-label">總篇數</span></div>
+          <div class="home-stat-divider"></div>
+          <div class="home-stat"><span class="home-stat-value" id="statMonth">—</span><span class="home-stat-label">本月篇數</span></div>
+        </div>
+        <div class="home-section" id="homeOnThisDaySection" style="display:none;">
+          <div class="home-section-header"><span class="home-section-label">歷史上的今天</span></div>
+          <div id="homeOnThisDayCards"></div>
+        </div>
+        <div class="home-section" id="homeRandomSection" style="display:none;">
+          <div class="home-section-header">
+            <span class="home-section-label">隨機回顧</span>
+            <button class="btn-reshuffle" id="reshuffleBtn">⟳ 再抽一篇</button>
+          </div>
+          <div id="homeRandomCard"></div>
+        </div>
+        <div class="home-loading" id="homeLoading" style="display:none;">
+          <span class="home-loading-text">載入中…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROOT: 搜尋 -->
+    <div class="page page-root" id="page-search">
+      <div class="page-inner">
+        <div class="panel-header">
+          <h1 class="panel-title">搜尋</h1>
+          <p class="panel-subtitle">翻閱過去，尋找某一刻。</p>
+        </div>
+        <div class="search-block">
+          <div class="search-row">
+            <input class="field-input search-input" type="text" id="searchKeyword" placeholder="標題關鍵字…" />
+            <input class="field-input search-date" type="date" id="searchDate" />
+            <button class="btn btn-primary search-btn" id="searchBtn"><span class="btn-icon">⌕</span> 搜尋</button>
+          </div>
+          <div class="advanced-toggle-row">
+            <button class="advanced-toggle-btn" id="advancedToggleBtn">進階搜尋 ▾</button>
+            <button class="btn btn-ghost scan-btn" id="clearSearchBtn" style="display:none;">✕ 清除篩選</button>
+          </div>
+          <div class="advanced-block" id="advancedBlock" style="display:none;">
+            <div class="field-group">
+              <label class="field-label" for="searchContent">搜尋內文</label>
+              <input class="field-input" type="text" id="searchContent" placeholder="內文關鍵字…" />
+            </div>
+          </div>
+        </div>
+        <div class="calendar-section">
+          <div class="calendar-nav">
+            <button class="cal-nav-btn" id="calPrevBtn">‹</button>
+            <span class="cal-nav-title" id="calTitle">—</span>
+            <button class="cal-nav-btn" id="calNextBtn">›</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid">
+            <p class="empty-hint cal-placeholder">載入中…</p>
+          </div>
+        </div>
+        <div class="history-list" id="historyList">
+          <p class="empty-hint">載入中…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROOT: 統計 -->
+    <div class="page page-root" id="page-stats">
+      <div class="page-inner">
+        <div class="panel-header">
+          <h1 class="panel-title">統計</h1>
+          <p class="panel-subtitle">你的書寫足跡。</p>
+        </div>
+        <div id="statsContent"><p class="empty-hint">載入中…</p></div>
+      </div>
+    </div>
+
+    <!-- ROOT: 系統設定 -->
+    <div class="page page-root" id="page-settings">
+      <div class="page-inner">
+        <div class="panel-header">
+          <h1 class="panel-title">系統設定</h1>
+          <p class="panel-subtitle">配置你的 AI 引導與偏好。</p>
+        </div>
+        <div class="settings-form">
+          <div class="settings-section">
+            <h2 class="settings-section-title">帳號</h2>
+            <div class="field-group">
+              <label class="field-label">目前使用者</label>
+              <div class="field-input" style="background:var(--bg-sidebar);cursor:default;" id="settingsUserDisplay">—</div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">匯出全部日記</label>
+              <button class="btn btn-ghost" id="exportBtn"><span class="btn-icon">⭳</span> 下載 .md 檔案（ZIP）</button>
+              <span class="label-hint" style="margin-left:0;margin-top:0.3rem;">將所有日記依年月資料夾打包下載</span>
+            </div>
+          </div>
+          <div class="settings-section">
+            <h2 class="settings-section-title">API 連線</h2>
+            <div class="field-group"><label class="field-label" for="apiBaseUrl">API Base URL</label><input class="field-input" type="url" id="apiBaseUrl" placeholder="https://api.openai.com/v1" /></div>
+            <div class="field-group"><label class="field-label" for="apiKey">API Key</label><input class="field-input" type="password" id="apiKey" placeholder="sk-…" autocomplete="off" /></div>
+            <div class="field-group"><label class="field-label" for="apiModel">Model</label><input class="field-input" type="text" id="apiModel" placeholder="gpt-4o" /></div>
+          </div>
+          <div class="settings-section">
+            <h2 class="settings-section-title">心情對應表</h2>
+            <div class="field-group"><label class="field-label" for="moodMap">JSON 格式編輯</label><textarea class="field-textarea mood-map-textarea" id="moodMap" rows="6"></textarea><span class="label-hint">格式：{"心情名稱": "😊", …}</span></div>
+          </div>
+          <div class="settings-section">
+            <h2 class="settings-section-title">提問 Prompt</h2>
+            <div class="field-group"><label class="field-label" for="promptA">Prompt A — 每日一問</label><textarea class="field-textarea" id="promptA" rows="5"></textarea></div>
+            <div class="field-group"><label class="field-label" for="promptB">Prompt B — AI 客製化提問</label><textarea class="field-textarea" id="promptB" rows="7"></textarea><span class="label-hint">佔位符：[心情] = 選取的心情，[事件] = 觸發事件輸入框的內容。</span></div>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-primary" id="saveSettingsBtn"><span class="btn-icon">⭳</span> 儲存設定</button>
+          </div>
+          <div class="save-feedback" id="settingsFeedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STACKED: 新增日記 -->
+    <div class="page page-stacked" id="page-new">
+      <div class="page-inner">
+        <div class="stacked-topbar">
+          <button class="btn-back" id="btnBackFromNew">← 返回</button>
+          <h2 class="stacked-title">新增日記</h2>
+          <div></div>
+        </div>
+        <div class="draft-banner" id="draftBanner" style="display:none;">
+          <span class="draft-banner-icon">💾</span>
+          <span class="draft-banner-text">發現上次未儲存的草稿</span>
+          <div class="draft-banner-actions">
+            <button class="btn-draft-action btn-draft-restore" id="draftRestoreBtn">還原草稿</button>
+            <button class="btn-draft-action btn-draft-discard" id="draftDiscardBtn">捨棄</button>
+          </div>
+        </div>
+        <div class="entry-form">
+          <div class="field-row two-col">
+            <div class="field-group"><label class="field-label" for="entryDate">日期</label><input class="field-input" type="date" id="entryDate" /></div>
+            <div class="field-group"><label class="field-label" for="entryTitle">標題</label><input class="field-input" type="text" id="entryTitle" placeholder="日記" /></div>
+          </div>
+          <div class="field-row two-col">
+            <div class="field-group">
+              <label class="field-label" for="entryMood">心情</label>
+              <div class="mood-select-wrap"><select class="field-input" id="entryMood"></select><span class="mood-emoji-display" id="moodEmoji">—</span></div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">提問模式</label>
+              <div class="radio-group">
+                <label class="radio-label"><input type="radio" name="promptMode" value="A" checked /><span>每日一問</span></label>
+                <label class="radio-label"><input type="radio" name="promptMode" value="B" /><span>AI 客製化</span></label>
+              </div>
+            </div>
+          </div>
+          <div class="field-group trigger-event-group" id="triggerEventGroup">
+            <label class="field-label" for="triggerEvent">觸發事件<span class="label-hint">選填</span></label>
+            <input class="field-input" type="text" id="triggerEvent" placeholder="例：開會被打斷、一個人走路回家…" maxlength="80" />
+          </div>
+          <div class="field-group">
+            <div class="prompt-bar">
+              <button class="btn btn-ghost" id="generatePromptBtn"><span class="btn-icon">✦</span> 生成引導問題</button>
+              <span class="prompt-status" id="promptStatus"></span>
+            </div>
+            <div class="ai-question-box" id="aiQuestionBox" style="display:none;"><p class="ai-question-text" id="aiQuestionText"></p></div>
+          </div>
+          <div class="field-group editor-group">
+            <div class="editor-header">
+              <label class="field-label" for="entryContent">內容</label>
+              <div class="editor-meta">
+                <span class="word-count" id="wordCount">0 字</span>
+                <div class="editor-toggle">
+                  <button class="toggle-btn active" id="btnEdit">編輯</button>
+                  <button class="toggle-btn" id="btnPreview">閱覽</button>
+                </div>
+              </div>
+            </div>
+            <textarea class="field-textarea editor-textarea" id="entryContent" placeholder="開始書寫…&#10;&#10;支援 Markdown 語法：&#10;# 標題　**粗體**　*斜體*　> 引言　- 清單"></textarea>
+            <div class="markdown-preview" id="markdownPreview" style="display:none;"></div>
+          </div>
+          <div class="action-bar">
+            <button class="btn btn-primary" id="saveEntryBtn"><span class="btn-icon">⭳</span> 儲存日記</button>
+            <button class="btn btn-ghost" id="cancelNewBtn">取消</button>
+          </div>
+          <div class="save-feedback" id="saveFeedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STACKED: 閱覽 / 編輯 -->
+    <div class="page page-stacked" id="page-entry">
+      <div class="page-inner">
+        <!-- 閱覽模式 -->
+        <div id="entryReadMode">
+          <div class="stacked-topbar">
+            <button class="btn-back" id="btnBackFromEntry">← 返回</button>
+            <div class="entry-topbar-badges">
+              <span class="overlay-date-badge" id="entryDateBadge"></span>
+              <span class="overlay-mood-badge" id="entryMoodBadge"></span>
+            </div>
+            <div class="entry-topbar-actions">
+              <button class="overlay-action-btn" id="entryEditBtn">✎ 編輯</button>
+              <button class="overlay-action-btn overlay-action-danger" id="entryDeleteBtn">✕ 刪除</button>
+            </div>
+          </div>
+          <div class="entry-read-body">
+            <h2 class="overlay-title" id="entryReadTitle"></h2>
+            <div class="ai-question-box overlay-ai-q" id="entryAiQ" style="display:none;"><p class="ai-question-text" id="entryAiText"></p></div>
+            <div class="overlay-body markdown-preview" id="entryReadBody"></div>
+          </div>
+        </div>
+        <!-- 編輯模式 -->
+        <div id="entryEditMode" style="display:none;">
+          <div class="stacked-topbar">
+            <button class="btn-back" id="btnCancelEntryEdit">← 取消編輯</button>
+            <h2 class="stacked-title">編輯日記</h2>
+            <div></div>
+          </div>
+          <div class="entry-form">
+            <div class="field-row two-col">
+              <div class="field-group"><label class="field-label">日期</label><input class="field-input" type="date" id="editDate" /></div>
+              <div class="field-group"><label class="field-label">標題</label><input class="field-input" type="text" id="editTitle" /></div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">心情</label>
+              <div class="mood-select-wrap"><select class="field-input" id="editMood"></select><span class="mood-emoji-display" id="editMoodEmoji">—</span></div>
+            </div>
+            <!-- AI 題目（唯讀顯示）-->
+            <div class="ai-question-box overlay-ai-q" id="editModeAiQ" style="display:none;"><p class="ai-question-text" id="editModeAiText"></p></div>
+            <div class="field-group editor-group">
+              <div class="editor-header">
+                <label class="field-label">內容</label>
+                <span class="word-count" id="editWordCount">0 字</span>
+              </div>
+              <textarea class="field-textarea editor-textarea" id="editContent"></textarea>
+            </div>
+            <div class="action-bar">
+              <button class="btn btn-primary" id="saveEditBtn"><span class="btn-icon">⭳</span> 儲存變更</button>
+              <button class="btn btn-ghost" id="cancelEditBtn">取消編輯</button>
+            </div>
+            <div class="save-feedback" id="editFeedback"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-stack -->
+
+  <!-- DELETE DIALOG -->
+  <div class="dialog-overlay" id="deleteDialog" aria-hidden="true">
+    <div class="dialog-box">
+      <h3 class="dialog-title">確認刪除</h3>
+      <p class="dialog-body">此操作無法復原。請輸入日記標題確認：</p>
+      <p class="dialog-entry-title" id="deleteTargetTitle"></p>
+      <input class="field-input dialog-input" type="text" id="deleteConfirmInput" placeholder="輸入標題以確認…" />
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" id="deleteCancelBtn">取消</button>
+        <button class="btn btn-danger" id="deleteConfirmBtn" disabled>確認刪除</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
