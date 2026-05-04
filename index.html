@@ -173,12 +173,12 @@
             <h2 class="settings-section-title">資料</h2>
             <div class="field-group">
               <label class="field-label">匯出日記</label>
-              <button class="btn btn-ghost" id="exportBtn"><span class="btn-icon">⭳</span> 下載 ZIP（wolf-diary / 年 / 年月）</button>
+              <button class="btn btn-ghost" id="exportBtn"><span class="btn-icon">↓</span> 下載 ZIP（wolf-diary / 年 / 年月）</button>
             </div>
             <div class="field-group">
               <label class="field-label">匯入日記</label>
               <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-                <button class="btn btn-ghost" id="importBtn"><span class="btn-icon">⭱</span> 選取 ZIP 檔案</button>
+                <button class="btn btn-ghost" id="importBtn"><span class="btn-icon">↑</span> 選取 ZIP 檔案</button>
                 <span class="label-hint" style="margin:0;" id="importStatus"></span>
               </div>
               <input type="file" id="importFileInput" accept=".zip" style="display:none;" />
@@ -200,7 +200,7 @@
             <div class="field-group"><label class="field-label" for="promptA">Prompt A — 每日一問</label><textarea class="field-textarea" id="promptA" rows="5"></textarea></div>
             <div class="field-group"><label class="field-label" for="promptB">Prompt B — AI 客製化提問</label><textarea class="field-textarea" id="promptB" rows="7"></textarea><span class="label-hint">佔位符：[心情] = 選取的心情，[事件] = 觸發事件輸入框的內容。</span></div>
           </div>
-          <div class="action-bar"><button class="btn btn-primary" id="saveSettingsBtn"><span class="btn-icon">⭳</span> 儲存設定</button></div>
+          <div class="action-bar"><button class="btn btn-primary" id="saveSettingsBtn"><span class="btn-icon">↓</span> 儲存設定</button></div>
           <div class="save-feedback" id="settingsFeedback"></div>
         </div>
       </div>
@@ -266,7 +266,7 @@
             <div class="markdown-preview" id="markdownPreview" style="display:none;"></div>
           </div>
           <div class="action-bar">
-            <button class="btn btn-primary" id="saveEntryBtn"><span class="btn-icon">⭳</span> 儲存日記</button>
+            <button class="btn btn-primary" id="saveEntryBtn"><span class="btn-icon">↓</span> 儲存日記</button>
             <button class="btn btn-ghost" id="cancelNewBtn">取消</button>
           </div>
           <div class="save-feedback" id="saveFeedback"></div>
@@ -316,7 +316,7 @@
               <textarea class="field-textarea editor-textarea" id="editContent"></textarea>
             </div>
             <div class="action-bar">
-              <button class="btn btn-primary" id="saveEditBtn"><span class="btn-icon">⭳</span> 儲存變更</button>
+              <button class="btn btn-primary" id="saveEditBtn"><span class="btn-icon">↓</span> 儲存變更</button>
               <button class="btn btn-ghost" id="cancelEditBtn">取消編輯</button>
             </div>
             <div class="save-feedback" id="editFeedback"></div>

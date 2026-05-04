@@ -710,7 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const a    = document.createElement('a'); a.href=url; a.download=`wolf-diary-export-${getTodayStr()}.zip`; a.click();
       URL.revokeObjectURL(url);
     } catch (err) { alert(`匯出失敗：${err.message}`); }
-    finally { btn.disabled=false; btn.innerHTML='<span class="btn-icon">⭳</span> 下載 ZIP（wolf-diary / 年 / 年月）'; }
+    finally { btn.disabled=false; btn.innerHTML='<span class="btn-icon">↓</span> 下載 ZIP（wolf-diary / 年 / 年月）'; }
   });
 
   /* ════════════════════════════════════════════════════
