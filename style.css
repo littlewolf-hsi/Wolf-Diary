@@ -719,3 +719,133 @@ select.field-input { cursor: pointer; background-image: url("data:image/svg+xml,
   font-family: var(--font-mono);
   font-size: 0.78rem; color: var(--text-hint); letter-spacing: 0.06em;
 }
+
+/* ════════════════════════════════════════════════════════
+   v8 — AUTH, HAMBURGER SIDEBAR, GLOBAL TOPBAR
+   ════════════════════════════════════════════════════════ */
+
+/* ── Auth overlay ── */
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.auth-box {
+  width: min(400px, 92vw);
+  display: flex; flex-direction: column; gap: 1rem;
+  padding: 2.5rem 2rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 40px rgba(42,39,36,0.1);
+}
+.auth-brand {
+  font-family: var(--font-mono); font-size: 0.82rem;
+  letter-spacing: 0.12em; color: var(--text-hint); text-align: center;
+}
+.auth-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border-soft);
+}
+.auth-tab {
+  flex: 1; background: transparent; border: none;
+  padding: 0.55rem 0; font-family: var(--font-serif); font-size: 0.9rem;
+  color: var(--text-hint); cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: all var(--t) var(--ease);
+}
+.auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.auth-submit-btn { width: 100%; justify-content: center; margin-top: 0.25rem; }
+
+/* ── Global topbar（手機專用）── */
+.global-topbar {
+  display: none; /* 桌機不顯示 */
+  position: fixed; top: 0; left: 0; right: 0; z-index: 90;
+  height: 52px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  padding: 0 1rem;
+  gap: 0.75rem;
+}
+.global-topbar.hidden-for-stack { display: none !important; }
+.global-topbar-title {
+  flex: 1; font-family: var(--font-serif); font-size: 1rem;
+  font-weight: 500; color: var(--text-primary); letter-spacing: 0.02em;
+}
+.hamburger-btn {
+  background: transparent; border: none;
+  font-size: 1.2rem; color: var(--text-secondary); cursor: pointer;
+  padding: 0.3rem; line-height: 1; flex-shrink: 0;
+}
+.btn-new-entry-topbar {
+  background: var(--accent); color: #fff; border: none;
+  width: 2rem; height: 2rem; border-radius: var(--radius-sm);
+  font-size: 1rem; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background var(--t) var(--ease);
+}
+.btn-new-entry-topbar:hover { background: var(--accent-dark); }
+
+/* ── Sidebar backdrop（手機）── */
+.sidebar-backdrop {
+  display: none;
+  position: fixed; inset: 0; z-index: 98;
+  background: rgba(42,39,36,0);
+  transition: background 0.3s var(--ease);
+}
+.sidebar-backdrop.visible { background: rgba(42,39,36,0.45); }
+
+/* ── Sidebar user ── */
+.sidebar-user { padding: 0 1.5rem 0.75rem; border-bottom: 1px solid var(--border-soft); margin-bottom: 0.5rem; }
+.sidebar-user-name { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.06em; color: var(--text-secondary); }
+
+/* ── Home loading ── */
+.home-loading { padding: 2rem 0; text-align: center; }
+.home-loading-text { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-hint); letter-spacing: 0.06em; }
+
+/* ════════════════════════════════════════════════════════
+   RESPONSIVE — mobile-first sidebar drawer
+   ════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+
+  /* 顯示全局 topbar */
+  .global-topbar { display: flex; }
+
+  /* page-stack 要讓出 topbar 空間 */
+  .page-stack { margin-left: 0; padding-top: 52px; }
+  .page-inner { padding: 1.5rem 1.25rem 4rem; }
+
+  /* Sidebar 變成 drawer */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 260px; z-index: 99;
+    transform: translateX(-100%);
+    transition: transform 0.3s var(--ease);
+    border-right: 1px solid var(--border);
+    padding-top: 1.5rem;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-backdrop { display: block; pointer-events: none; }
+  .sidebar-backdrop.visible { pointer-events: auto; }
+
+  /* 堆疊頁面全寬，不需要留 sidebar 空間 */
+  .page-stacked { width: 100vw; }
+
+  /* 堆疊頁面的 topbar 要讓出位置（不需要，因為 global-topbar 已隱藏）*/
+
+  /* 版型調整 */
+  .field-row.two-col { flex-direction: column; }
+  .search-date { width: 100%; }
+  .search-row  { flex-direction: column; align-items: stretch; }
+  .search-btn  { width: 100%; justify-content: center; }
+  .home-header { flex-direction: column; gap: 0.75rem; }
+  .btn-new-entry { display: none; } /* 桌機按鈕，手機用 topbar 的按鈕 */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 769px) {
+  /* 桌機：sidebar 永遠顯示，不需要 backdrop */
+  .sidebar-backdrop { display: none !important; }
+  .global-topbar    { display: none !important; }
+  .page-stack       { margin-left: var(--sidebar-w); }
+  .page-stacked     { width: calc(100vw - var(--sidebar-w)); }
+}
