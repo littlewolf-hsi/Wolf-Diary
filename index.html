@@ -13,6 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
@@ -62,10 +63,10 @@
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-brand"><span class="brand-name">🐺WOLF．DIARY🐾</span></div>
     <ul class="nav-list">
-      <li><button class="nav-btn active" data-root="home"><span class="nav-icon">⌂</span><span class="nav-label">主畫面</span></button></li>
-      <li><button class="nav-btn" data-root="search"><span class="nav-icon">⌕</span><span class="nav-label">搜尋</span></button></li>
-      <li><button class="nav-btn" data-root="stats"><span class="nav-icon">◈</span><span class="nav-label">統計</span></button></li>
-      <li><button class="nav-btn" data-root="settings"><span class="nav-icon">⚙</span><span class="nav-label">系統設定</span></button></li>
+      <li><button class="nav-btn active" data-root="home"><span class="nav-icon"><i data-lucide="house"></i></span><span class="nav-label">主畫面</span></button></li>
+      <li><button class="nav-btn" data-root="search"><span class="nav-icon"><i data-lucide="folder-search"></i></span><span class="nav-label">搜尋</span></button></li>
+      <li><button class="nav-btn" data-root="stats"><span class="nav-icon"><i data-lucide="chart-no-axes-column-decreasing"></i></span><span class="nav-label">統計</span></button></li>
+      <li><button class="nav-btn" data-root="settings"><span class="nav-icon"><i data-lucide="settings"></i></span><span class="nav-label">系統設定</span></button></li>
     </ul>
     <div class="sidebar-user" id="sidebarUser"></div>
     <div class="sidebar-footer">
@@ -75,9 +76,9 @@
 
   <!-- ══════════ GLOBAL TOPBAR（手機）══════════ -->
   <div class="global-topbar" id="globalTopbar">
-    <button class="hamburger-btn" id="hamburgerBtn">☰</button>
+    <button class="hamburger-btn" id="hamburgerBtn"><i data-lucide="menu"></i></button>
     <span class="global-topbar-title" id="globalTopbarTitle">主畫面</span>
-    <button class="btn-new-entry-topbar" id="btnNewEntryTopbar"><span>✚</span></button>
+    <button class="btn-new-entry-topbar" id="btnNewEntryTopbar"><i data-lucide="plus"></i></button>
   </div>
 
   <!-- ══════════ PAGE STACK ══════════ -->
@@ -88,7 +89,7 @@
       <div class="page-inner">
         <div class="home-header">
           <div><h1 class="panel-title">主畫面</h1><p class="panel-subtitle" id="homeDateLine">—</p></div>
-          <button class="btn-new-entry" id="btnNewEntry"><span class="btn-new-icon">✚</span> 新增日記</button>
+          <button class="btn-new-entry" id="btnNewEntry"><i data-lucide="plus"></i> 新增日記</button>
         </div>
         <div class="home-section">
           <div class="home-section-header"><span class="home-section-label">今天</span></div>
@@ -110,7 +111,7 @@
         <div class="home-section" id="homeRandomSection" style="display:none;">
           <div class="home-section-header">
             <span class="home-section-label">隨機回顧</span>
-            <button class="btn-reshuffle" id="reshuffleBtn">⟳ 再抽一篇</button>
+            <button class="btn-reshuffle" id="reshuffleBtn"><i data-lucide="refresh-cw"></i> 再抽一篇</button>
           </div>
           <div id="homeRandomCard"></div>
         </div>
@@ -126,7 +127,7 @@
           <div class="search-row">
             <input class="field-input search-input" type="text" id="searchKeyword" placeholder="標題關鍵字…" />
             <input class="field-input search-date" type="date" id="searchDate" />
-            <button class="btn btn-primary search-btn" id="searchBtn"><span class="btn-icon">⌕</span> 搜尋</button>
+            <button class="btn btn-primary search-btn" id="searchBtn"><i data-lucide="search"></i> 搜尋</button>
           </div>
           <div class="advanced-toggle-row">
             <button class="advanced-toggle-btn" id="advancedToggleBtn">進階搜尋 ▾</button>
@@ -173,12 +174,12 @@
             <h2 class="settings-section-title">資料</h2>
             <div class="field-group">
               <label class="field-label">匯出日記</label>
-              <button class="btn btn-ghost" id="exportBtn"><span class="btn-icon">↓</span> 下載 ZIP（wolf-diary / 年 / 年月）</button>
+              <button class="btn btn-ghost" id="exportBtn"><i data-lucide="download"></i> 下載 ZIP（wolf-diary / 年 / 年月）</button>
             </div>
             <div class="field-group">
               <label class="field-label">匯入日記</label>
               <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-                <button class="btn btn-ghost" id="importBtn"><span class="btn-icon">↑</span> 選取 ZIP 檔案</button>
+                <button class="btn btn-ghost" id="importBtn"><i data-lucide="upload"></i> 選取 ZIP 檔案</button>
                 <span class="label-hint" style="margin:0;" id="importStatus"></span>
               </div>
               <input type="file" id="importFileInput" accept=".zip" style="display:none;" />
@@ -200,7 +201,7 @@
             <div class="field-group"><label class="field-label" for="promptA">Prompt A — 每日一問</label><textarea class="field-textarea" id="promptA" rows="5"></textarea></div>
             <div class="field-group"><label class="field-label" for="promptB">Prompt B — AI 客製化提問</label><textarea class="field-textarea" id="promptB" rows="7"></textarea><span class="label-hint">佔位符：[心情] = 選取的心情，[事件] = 觸發事件輸入框的內容。</span></div>
           </div>
-          <div class="action-bar"><button class="btn btn-primary" id="saveSettingsBtn"><span class="btn-icon">↓</span> 儲存設定</button></div>
+          <div class="action-bar"><button class="btn btn-primary" id="saveSettingsBtn"><i data-lucide="download"></i> 儲存設定</button></div>
           <div class="save-feedback" id="settingsFeedback"></div>
         </div>
       </div>
@@ -210,7 +211,7 @@
     <div class="page page-stacked" id="page-new">
       <div class="page-inner">
         <div class="stacked-topbar">
-          <button class="btn-back" id="btnBackFromNew">← 返回</button>
+          <button class="btn-back" id="btnBackFromNew"><i data-lucide="arrow-left"></i> 返回</button>
           <h2 class="stacked-title">新增日記</h2>
           <div></div>
         </div>
@@ -246,7 +247,7 @@
           </div>
           <div class="field-group">
             <div class="prompt-bar">
-              <button class="btn btn-ghost" id="generatePromptBtn"><span class="btn-icon">✦</span> 生成引導問題</button>
+              <button class="btn btn-ghost" id="generatePromptBtn"><i data-lucide="sparkles"></i> 生成引導問題</button>
               <span class="prompt-status" id="promptStatus"></span>
             </div>
             <div class="ai-question-box" id="aiQuestionBox" style="display:none;"><p class="ai-question-text" id="aiQuestionText"></p></div>
@@ -266,7 +267,7 @@
             <div class="markdown-preview" id="markdownPreview" style="display:none;"></div>
           </div>
           <div class="action-bar">
-            <button class="btn btn-primary" id="saveEntryBtn"><span class="btn-icon">↓</span> 儲存日記</button>
+            <button class="btn btn-primary" id="saveEntryBtn"><i data-lucide="download"></i> 儲存日記</button>
             <button class="btn btn-ghost" id="cancelNewBtn">取消</button>
           </div>
           <div class="save-feedback" id="saveFeedback"></div>
@@ -279,14 +280,14 @@
       <div class="page-inner">
         <div id="entryReadMode">
           <div class="stacked-topbar">
-            <button class="btn-back" id="btnBackFromEntry">← 返回</button>
+            <button class="btn-back" id="btnBackFromEntry"><i data-lucide="arrow-left"></i> 返回</button>
             <div class="entry-topbar-badges">
               <span class="overlay-date-badge" id="entryDateBadge"></span>
               <span class="overlay-mood-badge" id="entryMoodBadge"></span>
             </div>
             <div class="entry-topbar-actions">
-              <button class="overlay-action-btn" id="entryEditBtn">✎ 編輯</button>
-              <button class="overlay-action-btn overlay-action-danger" id="entryDeleteBtn">✕ 刪除</button>
+              <button class="overlay-action-btn" id="entryEditBtn"><i data-lucide="pencil"></i> 編輯</button>
+              <button class="overlay-action-btn overlay-action-danger" id="entryDeleteBtn"><i data-lucide="trash"></i> 刪除</button>
             </div>
           </div>
           <div class="entry-read-body">
@@ -297,7 +298,7 @@
         </div>
         <div id="entryEditMode" style="display:none;">
           <div class="stacked-topbar">
-            <button class="btn-back" id="btnCancelEntryEdit">← 取消編輯</button>
+            <button class="btn-back" id="btnCancelEntryEdit"><i data-lucide="arrow-left"></i> 取消編輯</button>
             <h2 class="stacked-title">編輯日記</h2>
             <div></div>
           </div>
@@ -316,7 +317,7 @@
               <textarea class="field-textarea editor-textarea" id="editContent"></textarea>
             </div>
             <div class="action-bar">
-              <button class="btn btn-primary" id="saveEditBtn"><span class="btn-icon">↓</span> 儲存變更</button>
+              <button class="btn btn-primary" id="saveEditBtn"><i data-lucide="download"></i> 儲存變更</button>
               <button class="btn btn-ghost" id="cancelEditBtn">取消編輯</button>
             </div>
             <div class="save-feedback" id="editFeedback"></div>

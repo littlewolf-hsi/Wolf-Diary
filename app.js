@@ -92,6 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
     await onSignedIn(data.user);
   });
 
+  const refreshIcons = () => { if (typeof lucide !== "undefined") lucide.createIcons(); };
+
   const onSignedIn = async (user) => {
     currentUser = user;
     currentNickname = user.user_metadata?.nickname || user.email || '使用者';
@@ -462,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stackedPages.forEach(p => p.classList.remove('pushed','visible'));
     const page = document.getElementById(`page-${id}`);
     page.classList.add('pushed');
-    requestAnimationFrame(() => requestAnimationFrame(() => page.classList.add('visible')));
+    requestAnimationFrame(() => requestAnimationFrame(() => { page.classList.add('visible'); refreshIcons(); }));
     // 手機上隱藏 global topbar，讓堆疊頁自己的 topbar 主導
     globalTopbar.classList.add('hidden-for-stack');
   };
@@ -587,9 +589,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const s = calcStreak(allEntries);
     let el = document.getElementById('sidebarStreak');
     if (!el) { el=document.createElement('div'); el.id='sidebarStreak'; el.className='sidebar-streak'; document.querySelector('.sidebar-footer').parentNode.insertBefore(el,document.querySelector('.sidebar-footer')); }
-    if (s>=2)      { el.innerHTML=`<span class="streak-fire">🔥</span><span class="streak-count">連續 ${s} 天</span>`; el.style.display='flex'; }
-    else if (s===1){ el.innerHTML=`<span class="streak-fire">✦</span><span class="streak-count">今天已記錄</span>`;         el.style.display='flex'; }
+    if (s>=2)      { el.innerHTML=`<span class="streak-fire"><i data-lucide="flame"></i></span><span class="streak-count">連續 ${s} 天</span>`; el.style.display='flex'; }
+    else if (s===1){ el.innerHTML=`<span class="streak-fire"><i data-lucide="sparkles"></i></span><span class="streak-count">今天已記錄</span>`;         el.style.display='flex'; }
     else           { el.style.display='none'; }
+    refreshIcons();
   };
 
   /* ════════════════════════════════════════════════════
@@ -772,6 +775,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
   // 檢查現有 session
+  // Init Lucide icons
+  if (typeof lucide !== "undefined") lucide.createIcons();
+
   db.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
       await onSignedIn(session.user);
