@@ -20,14 +20,14 @@
   <!-- ══════════ AUTH OVERLAY ══════════ -->
   <div class="auth-overlay" id="authOverlay">
     <div class="auth-box">
-      <div class="auth-brand">🐺 WOLF．DIARY</div>
+      <div class="auth-brand">🐺 WOLF．DIARY 🐾</div>
       <div class="auth-tabs">
         <button class="auth-tab active" id="tabLogin">登入</button>
         <button class="auth-tab" id="tabSignup">註冊</button>
       </div>
       <div id="authLogin">
         <div class="field-group">
-          <label class="field-label" for="loginEmail">Email</label>
+          <label class="field-label" for="loginEmail">電子郵件</label>
           <input class="field-input" type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email" />
         </div>
         <div class="field-group">
@@ -39,11 +39,11 @@
       </div>
       <div id="authSignup" style="display:none;">
         <div class="field-group">
-          <label class="field-label" for="signupNickname">名字</label>
-          <input class="field-input" type="text" id="signupNickname" placeholder="你的名字" maxlength="30" />
+          <label class="field-label" for="signupNickname">暱稱</label>
+          <input class="field-input" type="text" id="signupNickname" placeholder="你的暱稱" maxlength="30" />
         </div>
         <div class="field-group">
-          <label class="field-label" for="signupEmail">Email</label>
+          <label class="field-label" for="signupEmail">電子郵件</label>
           <input class="field-input" type="email" id="signupEmail" placeholder="your@email.com" autocomplete="email" />
         </div>
         <div class="field-group">
@@ -122,7 +122,7 @@
     <!-- ROOT: 搜尋 -->
     <div class="page page-root" id="page-search">
       <div class="page-inner">
-        <div class="panel-header"><h1 class="panel-title">搜尋</h1><p class="panel-subtitle">翻閱過去，尋找某一刻。</p></div>
+        <div class="panel-header"><h1 class="panel-title">搜尋</h1><p class="panel-subtitle">翻閱過去。</p></div>
         <div class="search-block">
           <div class="search-row">
             <input class="field-input search-input" type="text" id="searchKeyword" placeholder="標題關鍵字…" />
@@ -160,7 +160,7 @@
     <!-- ROOT: 系統設定 -->
     <div class="page page-root" id="page-settings">
       <div class="page-inner">
-        <div class="panel-header"><h1 class="panel-title">系統設定</h1><p class="panel-subtitle">配置你的 AI 引導與偏好。</p></div>
+        <div class="panel-header"><h1 class="panel-title">系統設定</h1><p class="panel-subtitle">自訂心情與AI問題提示詞。</p></div>
         <div class="settings-form">
           <div class="settings-section">
             <h2 class="settings-section-title">帳號</h2>
@@ -174,7 +174,7 @@
             <h2 class="settings-section-title">資料</h2>
             <div class="field-group">
               <label class="field-label">匯出日記</label>
-              <button class="btn btn-ghost" id="exportBtn"><i data-lucide="download"></i> 下載 ZIP（wolf-diary / 年 / 年月）</button>
+              <button class="btn btn-ghost" id="exportBtn"><i data-lucide="download"></i> 下載 ZIP 檔案</button>
             </div>
             <div class="field-group">
               <label class="field-label">匯入日記</label>
@@ -183,23 +183,23 @@
                 <span class="label-hint" style="margin:0;" id="importStatus"></span>
               </div>
               <input type="file" id="importFileInput" accept=".zip" style="display:none;" />
-              <span class="label-hint" style="margin-left:0;margin-top:0.3rem;">支援匯入先前匯出的 ZIP，重複日期+標題的日記會自動略過</span>
+              <span class="label-hint" style="margin-left:0;margin-top:0.3rem;">支援匯入先前匯出之ZIP檔案，重複日期與標題的日記會自動略過。</span>
             </div>
           </div>
           <div class="settings-section">
-            <h2 class="settings-section-title">API 連線</h2>
-            <div class="field-group"><label class="field-label" for="apiBaseUrl">API Base URL</label><input class="field-input" type="url" id="apiBaseUrl" placeholder="https://api.openai.com/v1" /></div>
-            <div class="field-group"><label class="field-label" for="apiKey">API Key</label><input class="field-input" type="password" id="apiKey" placeholder="sk-…（僅存於本機）" autocomplete="off" /></div>
-            <div class="field-group"><label class="field-label" for="apiModel">Model</label><input class="field-input" type="text" id="apiModel" placeholder="gpt-4o" /></div>
+            <h2 class="settings-section-title">AI API</h2>
+            <div class="field-group"><label class="field-label" for="apiBaseUrl">API Base URL</label><input class="field-input" type="url" id="apiBaseUrl" placeholder="https://api.lorebary.com/aistudio" /></div>
+            <div class="field-group"><label class="field-label" for="apiKey">API Key</label><input class="field-input" type="password" id="apiKey" placeholder="AI-…（僅存於本機）" autocomplete="off" /></div>
+            <div class="field-group"><label class="field-label" for="apiModel">Model</label><input class="field-input" type="text" id="apiModel" placeholder="gemini-2.5-flash" /></div>
           </div>
           <div class="settings-section">
-            <h2 class="settings-section-title">心情對應表</h2>
+            <h2 class="settings-section-title">自訂心情</h2>
             <div class="field-group"><label class="field-label" for="moodMap">JSON 格式編輯</label><textarea class="field-textarea mood-map-textarea" id="moodMap" rows="6"></textarea><span class="label-hint">格式：{"心情名稱": "😊", …}</span></div>
           </div>
           <div class="settings-section">
-            <h2 class="settings-section-title">提問 Prompt</h2>
+            <h2 class="settings-section-title">AI提示詞</h2>
             <div class="field-group"><label class="field-label" for="promptA">Prompt A — 每日一問</label><textarea class="field-textarea" id="promptA" rows="5"></textarea></div>
-            <div class="field-group"><label class="field-label" for="promptB">Prompt B — AI 客製化提問</label><textarea class="field-textarea" id="promptB" rows="7"></textarea><span class="label-hint">佔位符：[心情] = 選取的心情，[事件] = 觸發事件輸入框的內容。</span></div>
+            <div class="field-group"><label class="field-label" for="promptB">Prompt B — AI客製化提問</label><textarea class="field-textarea" id="promptB" rows="7"></textarea><span class="label-hint">[心情] = 選取的心情，[事件] = 觸發事件輸入框的內容。</span></div>
           </div>
           <div class="action-bar"><button class="btn btn-primary" id="saveSettingsBtn"><i data-lucide="download"></i> 儲存設定</button></div>
           <div class="save-feedback" id="settingsFeedback"></div>
@@ -237,13 +237,13 @@
               <label class="field-label">提問模式</label>
               <div class="radio-group">
                 <label class="radio-label"><input type="radio" name="promptMode" value="A" checked /><span>每日一問</span></label>
-                <label class="radio-label"><input type="radio" name="promptMode" value="B" /><span>AI 客製化</span></label>
+                <label class="radio-label"><input type="radio" name="promptMode" value="B" /><span>AI客製化</span></label>
               </div>
             </div>
           </div>
           <div class="field-group trigger-event-group" id="triggerEventGroup">
             <label class="field-label" for="triggerEvent">觸發事件<span class="label-hint">選填</span></label>
-            <input class="field-input" type="text" id="triggerEvent" placeholder="例：開會被打斷、一個人走路回家…" maxlength="80" />
+            <input class="field-input" type="text" id="triggerEvent" placeholder="例：看了一本好書、一個人走路回家…" maxlength="80" />
           </div>
           <div class="field-group">
             <div class="prompt-bar">
@@ -332,7 +332,7 @@
   <div class="dialog-overlay" id="deleteDialog">
     <div class="dialog-box">
       <h3 class="dialog-title">確認刪除</h3>
-      <p class="dialog-body">此操作無法復原。請輸入日記標題確認：</p>
+      <p class="dialog-body">此操作無法復原。請輸入日記標題繼續：</p>
       <p class="dialog-entry-title" id="deleteTargetTitle"></p>
       <input class="field-input dialog-input" type="text" id="deleteConfirmInput" placeholder="輸入標題以確認…" />
       <div class="dialog-actions">
@@ -346,8 +346,8 @@
   <div class="dialog-overlay" id="deleteAccountDialog">
     <div class="dialog-box">
       <h3 class="dialog-title">刪除帳號</h3>
-      <p class="dialog-body">這會永久刪除你的帳號和所有日記，無法復原。請輸入「確認刪除」繼續：</p>
-      <input class="field-input dialog-input" type="text" id="deleteAccountInput" placeholder="確認刪除" />
+      <p class="dialog-body">此操作會永久刪除你的帳號和所有日記，無法復原。請輸入「確認刪除」繼續：</p>
+      <input class="field-input dialog-input" type="text" id="deleteAccountInput" placeholder="輸入「確認刪除」以確認…" />
       <div class="dialog-actions">
         <button class="btn btn-ghost" id="deleteAccountCancelBtn">取消</button>
         <button class="btn btn-danger" id="deleteAccountConfirmBtn" disabled>永久刪除帳號</button>
