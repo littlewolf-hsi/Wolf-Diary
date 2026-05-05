@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── CONSTANTS ── */
   const LS_KEY       = 'wolf_diary_settings';
   const LS_DRAFT_KEY = 'wolf_diary_draft';
-  const MILESTONES   = [1, 5, 10, 20, 50, 100, 200, 365, 500];
+  const MILESTONES   = [1, 5, 10, 20, 50, 100, 150, 200, 300, 365, 500, 730, 1000, 1500, 2000, 3000];
 
   const DEFAULT_SETTINGS = {
     apiBaseUrl: 'https://api.openai.com/v1',
@@ -686,10 +686,50 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="stats-section"><div class="stats-section-label">心情分佈</div><div class="stats-mood-list">
         ${moodEntries.map(([name,count])=>`<div class="stats-mood-row"><span class="stats-mood-emoji">${moodMap[name]||name}</span><span class="stats-mood-name">${moodMap[name]?name:''}</span><div class="stats-mood-bar-wrap"><div class="stats-mood-bar" style="width:${Math.round((count/total)*100)}%"></div></div><span class="stats-mood-count">${count} 篇</span></div>`).join('')}
       </div></div>
-      <div class="stats-section"><div class="stats-section-label">里程碑</div><div class="stats-milestones">
-        ${MILESTONES.map(m=>{const done=total>=m;return`<div class="stats-milestone ${done?'achieved':'locked'}"><span class="milestone-icon">${done?'✦':'○'}</span><span class="milestone-num">第 ${m} 篇</span><span class="milestone-date">${done?milestoneDate(m):'—'}</span></div>`;}).join('')}
-        ${MILESTONES.find(m=>total<m)?`<div class="stats-next-milestone">距離第 ${MILESTONES.find(m=>total<m)} 篇還有 ${MILESTONES.find(m=>total<m)-total} 篇</div>`:'<div class="stats-next-milestone">🎉 所有里程碑已達成！</div>'}
-      </div></div>`;
+      <div class="stats-section"><div class="stats-section-label">里程碑</div>
+        ${(() => {
+          const achieved = MILESTONES.filter(m => total >= m);
+          const next     = MILESTONES.find(m => total < m);
+          const last     = achieved[achieved.length - 1];
+          const lastDate = last ? milestoneDate(last) : null;
+
+          if (!next) {
+            // 全部達成
+            return `
+              <div class="milestone-display">
+                <div class="milestone-last">
+                  <span class="milestone-last-icon">✦</span>
+                  <span class="milestone-last-num">第 ${last} 篇</span>
+                  <span class="milestone-last-date">${lastDate}</span>
+                </div>
+                <div class="milestone-congrats">🎉 所有里程碑已達成，共 ${total} 篇！</div>
+              </div>`;
+          }
+
+          const prev   = last || 0;
+          const pct    = Math.round(((total - prev) / (next - prev)) * 100);
+          const remain = next - total;
+
+          return `
+            <div class="milestone-display">
+              ${last ? `
+              <div class="milestone-last">
+                <span class="milestone-last-icon">✦</span>
+                <span class="milestone-last-num">第 ${last} 篇</span>
+                <span class="milestone-last-date">${lastDate}</span>
+              </div>` : ''}
+              <div class="milestone-progress-wrap">
+                <div class="milestone-progress-bar">
+                  <div class="milestone-progress-fill" style="width:${pct}%"></div>
+                </div>
+                <div class="milestone-progress-labels">
+                  <span class="milestone-progress-count">${total} / ${next}</span>
+                  <span class="milestone-progress-remain">還有 ${remain} 篇到第 ${next} 篇</span>
+                </div>
+              </div>
+            </div>`;
+        })()}
+      </div>`;
   };
 
   /* ════════════════════════════════════════════════════

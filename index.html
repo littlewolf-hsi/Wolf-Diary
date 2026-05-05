@@ -131,7 +131,7 @@
           </div>
           <div class="advanced-toggle-row">
             <button class="advanced-toggle-btn" id="advancedToggleBtn">進階搜尋 ▾</button>
-            <button class="btn btn-ghost scan-btn" id="clearSearchBtn" style="display:none;">✕ 清除篩選</button>
+            <button class="btn btn-ghost scan-btn" id="clearSearchBtn" style="display:none;"><i data-lucide="x"></i> 清除篩選</button>
           </div>
           <div class="advanced-block" id="advancedBlock" style="display:none;">
             <div class="field-group"><label class="field-label" for="searchContent">搜尋內文</label><input class="field-input" type="text" id="searchContent" placeholder="內文關鍵字…" /></div>
@@ -201,7 +201,7 @@
             <div class="field-group"><label class="field-label" for="promptA">Prompt A — 每日一問</label><textarea class="field-textarea" id="promptA" rows="5"></textarea></div>
             <div class="field-group"><label class="field-label" for="promptB">Prompt B — AI客製化提問</label><textarea class="field-textarea" id="promptB" rows="7"></textarea><span class="label-hint">[心情] = 選取的心情，[事件] = 觸發事件輸入框的內容。</span></div>
           </div>
-          <div class="action-bar"><button class="btn btn-primary" id="saveSettingsBtn"><i data-lucide="download"></i> 儲存設定</button></div>
+          <div class="action-bar"><button class="btn btn-primary" id="saveSettingsBtn"><i data-lucide="save"></i> 儲存設定</button></div>
           <div class="save-feedback" id="settingsFeedback"></div>
         </div>
       </div>
@@ -267,7 +267,7 @@
             <div class="markdown-preview" id="markdownPreview" style="display:none;"></div>
           </div>
           <div class="action-bar">
-            <button class="btn btn-primary" id="saveEntryBtn"><i data-lucide="download"></i> 儲存日記</button>
+            <button class="btn btn-primary" id="saveEntryBtn"><i data-lucide="save"></i> 儲存日記</button>
             <button class="btn btn-ghost" id="cancelNewBtn">取消</button>
           </div>
           <div class="save-feedback" id="saveFeedback"></div>
@@ -317,7 +317,7 @@
               <textarea class="field-textarea editor-textarea" id="editContent"></textarea>
             </div>
             <div class="action-bar">
-              <button class="btn btn-primary" id="saveEditBtn"><i data-lucide="download"></i> 儲存變更</button>
+              <button class="btn btn-primary" id="saveEditBtn"><i data-lucide="save"></i> 儲存變更</button>
               <button class="btn btn-ghost" id="cancelEditBtn">取消編輯</button>
             </div>
             <div class="save-feedback" id="editFeedback"></div>
