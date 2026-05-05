@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let el = document.getElementById('sidebarStreak');
     if (!el) { el=document.createElement('div'); el.id='sidebarStreak'; el.className='sidebar-streak'; document.querySelector('.sidebar-footer').parentNode.insertBefore(el,document.querySelector('.sidebar-footer')); }
     if (s>=2)      { el.innerHTML=`<span class="streak-fire"><i data-lucide="flame"></i></span><span class="streak-count">連續 ${s} 天</span>`; el.style.display='flex'; }
-    else if (s===1){ el.innerHTML=`<span class="streak-fire"><i data-lucide="sparkles"></i></span><span class="streak-count">今天已記錄</span>`;         el.style.display='flex'; }
+    else if (s===1){ el.innerHTML=`<span class="streak-fire"><i data-lucide="sparkle"></i></span><span class="streak-count">今天已記錄</span>`;         el.style.display='flex'; }
     else           { el.style.display='none'; }
     refreshIcons();
   };
