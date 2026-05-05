@@ -963,11 +963,29 @@ i[data-lucide] {
   stroke-linejoin: round;
 }
 
-/* 全域預設 */
-i[data-lucide] {
+/* ════════════════════════════════════════════════════════
+   LUCIDE ICONS — 鎖定 SVG（createIcons() 後 i 換成 svg）
+   ════════════════════════════════════════════════════════ */
+
+/* 全域：所有 Lucide 產生的 svg */
+.nav-icon svg,
+.nav-btn svg,
+.btn svg,
+.btn-back svg,
+.btn-reconnect svg,
+.btn-reshuffle svg,
+.btn-new-entry svg,
+.btn-new-entry-topbar svg,
+.overlay-action-btn svg,
+.overlay-close-btn svg,
+.search-btn svg,
+.prompt-bar svg,
+.streak-fire svg,
+.advanced-toggle-row svg,
+.stacked-topbar svg,
+.auth-box svg,
+.settings-form svg {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   vertical-align: middle;
   flex-shrink: 0;
   stroke: currentColor;
@@ -975,19 +993,13 @@ i[data-lucide] {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  /* 跟著旁邊的字一樣大 */
-  width: 1em;
-  height: 1em;
+  /* 比字小一點 */
+  width: 0.8em;
+  height: 0.8em;
 }
 
-/* 漢堡按鈕稍大一點 */
-.hamburger-btn i[data-lucide] {
-  width: 1.3em;
-  height: 1.3em;
-}
-
-/* topbar 新增按鈕 */
-.btn-new-entry-topbar i[data-lucide] {
+/* 漢堡按鈕稍大，方便點擊 */
+.hamburger-btn svg {
   width: 1.1em;
   height: 1.1em;
 }
