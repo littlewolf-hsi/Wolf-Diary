@@ -965,15 +965,15 @@ i[data-lucide] {
 
 /* Sidebar nav 圖示 */
 .nav-icon i[data-lucide] {
-  width: 11px;
-  height: 11px;
+  width: 6px;
+  height: 6px;
 }
 
 /* 按鈕內圖示（通用）*/
 .btn i[data-lucide],
 .btn-reconnect i[data-lucide] {
-  width: 11px;
-  height: 11px;
+  width:6px;
+  height: 6px;
 }
 
 /* 漢堡按鈕 */
