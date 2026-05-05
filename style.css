@@ -334,6 +334,7 @@ select.field-input { cursor: pointer; background-image: url("data:image/svg+xml,
 .btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(107,143,168,0.3); }
 .btn-ghost   { background: transparent; color: var(--text-secondary); border-color: var(--border); }
 .btn-ghost:hover { background: var(--bg-sidebar); color: var(--text-primary); }
+.field-group .btn { align-self: flex-start; }
 .btn-danger  { background: var(--danger); color: #fff; border-color: var(--danger); }
 .btn-danger:hover:not(:disabled) { background: #a85e53; transform: translateY(-1px); }
 .btn-danger:disabled { opacity: 0.4; cursor: not-allowed; }
