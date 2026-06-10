@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('homeLoading').style.display = 'none';
     if (error) { console.error(error); return; }
     allEntries = (data || []).map(rowToEntry);
-    refreshHome(); renderHistoryList(allEntries); renderCalendar(); updateSidebarStreak(); renderStats();
+    refreshHome(); renderSearchResults(); renderCalendar(); updateSidebarStreak(); renderStats();
   };
 
   /* ════════════════════════════════════════════════════
@@ -435,9 +435,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   };
   const applyFilters  = () => allEntries.filter(e => matchEntry(e, getFilters()));
-  const executeSearch = () => { clearSearchBtn.style.display = hasAnyFilter(getFilters()) ? 'inline-flex' : 'none'; renderHistoryList(applyFilters()); historyList.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
-  const filterCurrent = () => applyFilters();
-  clearSearchBtn.addEventListener('click', () => { searchKeyword.value = ''; searchDate.value = ''; searchMoodSel.value = ''; searchStarBtn.classList.remove('active'); clearSearchBtn.style.display = 'none'; renderHistoryList(allEntries); });
+  // 未套用任何篩選時不列出全部，改顯示提示；有篩選才顯示結果
+  const renderSearchResults = () => {
+    if (!hasAnyFilter(getFilters())) { historyList.innerHTML = '<p class="empty-hint">輸入關鍵字、選擇日期或心情，或點月曆上的日子來搜尋。</p>'; clearSearchBtn.style.display = 'none'; return; }
+    clearSearchBtn.style.display = 'inline-flex';
+    renderHistoryList(applyFilters());
+  };
+  const executeSearch = () => { renderSearchResults(); if (hasAnyFilter(getFilters())) historyList.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
+  const filterCurrent = renderSearchResults; // 編輯/刪除/加星號後沿用同一套顯示邏輯
+  clearSearchBtn.addEventListener('click', () => { searchKeyword.value = ''; searchDate.value = ''; searchMoodSel.value = ''; searchStarBtn.classList.remove('active'); renderSearchResults(); });
   document.getElementById('searchBtn').addEventListener('click', executeSearch);
   [searchKeyword, searchDate].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') executeSearch(); }));
   searchMoodSel.addEventListener('change', executeSearch);
@@ -592,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (error) { showFeedback('saveFeedback', `⚠ ${error.message}`, 'err'); return; }
     viewingEntry.starred = next;
     const idx = allEntries.findIndex(e => e.id === viewingEntry.id); if (idx !== -1) allEntries[idx].starred = next;
-    updateStarBtn(); renderHistoryList(filterCurrent()); refreshHome();
+    updateStarBtn(); filterCurrent(); refreshHome();
   });
   document.getElementById('entryEditBtn').addEventListener('click',        showEntryEditMode);
   document.getElementById('btnCancelEntryEdit').addEventListener('click',  showEntryReadMode);
@@ -612,7 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const updated = rowToEntry(data);
       const idx = allEntries.findIndex(e => e.id === updated.id);
       if (idx !== -1) { allEntries[idx] = updated; allEntries.sort((a,b) => b.date.localeCompare(a.date)); }
-      renderHistoryList(filterCurrent()); renderCalendar(); refreshHome(); renderStats();
+      filterCurrent(); renderCalendar(); refreshHome(); renderStats();
       viewingEntry = updated;
       document.getElementById('entryDateBadge').textContent = updated.date;
       document.getElementById('entryMoodBadge').textContent = moodBadgeText(updated);
@@ -649,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const { error } = await db.from(TABLE).delete().eq('id', deletedId).eq('user_id', currentUser.id);
       if (error) throw error;
       allEntries = allEntries.filter(e => e.id !== deletedId);
-      renderHistoryList(filterCurrent()); renderCalendar(); updateSidebarStreak(); refreshHome(); renderStats();
+      filterCurrent(); renderCalendar(); updateSidebarStreak(); refreshHome(); renderStats();
       popToRoot();
       showFeedback('saveFeedback', `✓ 已刪除：${deletedTitle}`, 'ok');
     } catch (err) { alert(`刪除失敗：${err.message}`); }
@@ -886,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else skipped++;
       }
       allEntries.sort((a,b) => b.date.localeCompare(a.date));
-      refreshHome(); renderHistoryList(allEntries); renderCalendar(); updateSidebarStreak(); renderStats();
+      refreshHome(); renderSearchResults(); renderCalendar(); updateSidebarStreak(); renderStats();
       status.textContent = `✓ 匯入 ${imported} 篇，略過 ${skipped} 篇`; status.style.color = 'var(--success)';
     } catch (err) { status.textContent = `⚠ ${err.message}`; status.style.color = 'var(--danger)'; }
     e.target.value = '';
