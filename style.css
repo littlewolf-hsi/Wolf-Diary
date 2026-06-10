@@ -1098,3 +1098,6 @@ i[data-lucide] {
   .search-mood { width: 100%; min-width: 0; }
   .search-star-toggle { justify-content: center; }
 }
+
+/* 搜尋頁：結果列表移到日曆上方後，與日曆保持間距 */
+.history-list { margin-bottom: 2rem; }

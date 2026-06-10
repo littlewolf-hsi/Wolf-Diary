@@ -126,22 +126,17 @@
         <div class="panel-header"><h1 class="panel-title">搜尋</h1><p class="panel-subtitle">翻閱過去。</p></div>
         <div class="search-block">
           <div class="search-row">
-            <input class="field-input search-input" type="text" id="searchKeyword" placeholder="標題關鍵字…" />
+            <input class="field-input search-input" type="text" id="searchKeyword" placeholder="搜尋標題與內文…" />
             <input class="field-input search-date" type="date" id="searchDate" />
             <button class="btn btn-primary search-btn" id="searchBtn"><i data-lucide="search"></i> 搜尋</button>
           </div>
           <div class="search-filter-row">
             <select class="field-input search-mood" id="searchMood" aria-label="依心情篩選"><option value="">所有心情</option></select>
             <button class="search-star-toggle" id="searchStarred"><i data-lucide="star"></i> 只看加星號</button>
-          </div>
-          <div class="advanced-toggle-row">
-            <button class="advanced-toggle-btn" id="advancedToggleBtn">進階搜尋 ▾</button>
             <button class="btn btn-ghost scan-btn" id="clearSearchBtn" style="display:none;"><i data-lucide="x"></i> 清除篩選</button>
           </div>
-          <div class="advanced-block" id="advancedBlock" style="display:none;">
-            <div class="field-group"><label class="field-label" for="searchContent">搜尋內文</label><input class="field-input" type="text" id="searchContent" placeholder="內文關鍵字…" /></div>
-          </div>
         </div>
+        <div class="history-list" id="historyList"><p class="empty-hint">載入中…</p></div>
         <div class="calendar-section">
           <div class="calendar-nav">
             <button class="cal-nav-btn" id="calPrevBtn">‹</button>
@@ -150,7 +145,6 @@
           </div>
           <div class="calendar-grid" id="calendarGrid"><p class="empty-hint cal-placeholder">載入中…</p></div>
         </div>
-        <div class="history-list" id="historyList"><p class="empty-hint">載入中…</p></div>
       </div>
     </div>
 

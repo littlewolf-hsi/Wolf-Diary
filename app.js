@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fillSubSelect(document.getElementById('entrySubMood'), document.getElementById('entryMood').value);
     refreshEmoji(document.getElementById('entryMood'), document.getElementById('moodEmoji'));
     updateWordCount('', wordCountEl); markdownPreview.innerHTML = '';
-    clearDraft(); switchToEdit(); currentEntryId = null;
+    switchToEdit(); currentEntryId = null;
     document.getElementById('draftBanner').style.display = 'none';
     document.getElementById('saveFeedback').textContent = '';
   };
@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   document.getElementById('saveEntryBtn').addEventListener('click', saveNewEntry);
-  document.getElementById('cancelNewBtn').addEventListener('click', () => { if (entryContent.value.trim()) { if (!confirm('確定要放棄目前的內容嗎？')) return; } popToRoot(); });
+  document.getElementById('cancelNewBtn').addEventListener('click', () => { if (entryContent.value.trim() && !confirm('確定要放棄目前的內容嗎？')) return; resetNewForm(); clearDraft(); popToRoot(); });
 
   /* ════════════════════════════════════════════════════
      SEARCH
@@ -417,36 +417,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const historyList    = document.getElementById('historyList');
   const searchKeyword  = document.getElementById('searchKeyword');
   const searchDate     = document.getElementById('searchDate');
-  const searchContent  = document.getElementById('searchContent');
   const clearSearchBtn = document.getElementById('clearSearchBtn');
-  let advOpen = false;
-
-  document.getElementById('advancedToggleBtn').addEventListener('click', () => { advOpen = !advOpen; document.getElementById('advancedBlock').style.display = advOpen ? 'block' : 'none'; document.getElementById('advancedToggleBtn').textContent = advOpen ? '進階搜尋 ▴' : '進階搜尋 ▾'; });
-
-  const searchMoodSel = document.getElementById('searchMood');
-  const searchStarBtn = document.getElementById('searchStarred');
+  const searchMoodSel  = document.getElementById('searchMood');
+  const searchStarBtn  = document.getElementById('searchStarred');
   const getFilters = () => ({
     kw: searchKeyword.value.trim().toLowerCase(),
     dt: searchDate.value,
-    ct: searchContent.value.trim().toLowerCase(),
     mood: searchMoodSel.value,
     starred: searchStarBtn.classList.contains('active'),
   });
-  const hasAnyFilter = f => !!(f.kw || f.dt || f.ct || f.mood || f.starred);
+  const hasAnyFilter = f => !!(f.kw || f.dt || f.mood || f.starred);
   const matchEntry = (e, f) => {
-    if (f.kw) { const hay = `${e.title} ${e.content || e.preview || ''}`.toLowerCase(); if (!hay.includes(f.kw)) return false; } // 主關鍵字同時比對標題＋內文
+    if (f.kw) { const hay = `${e.title} ${e.content || e.preview || ''}`.toLowerCase(); if (!hay.includes(f.kw)) return false; } // 標題與內文都比對
     if (f.dt && e.date !== f.dt) return false;
-    if (f.ct && !(e.content || e.preview || '').toLowerCase().includes(f.ct)) return false;
     if (f.mood && coreOfName(e.moodName) !== f.mood) return false;
     if (f.starred && !e.starred) return false;
     return true;
   };
   const applyFilters  = () => allEntries.filter(e => matchEntry(e, getFilters()));
-  const executeSearch = () => { clearSearchBtn.style.display = hasAnyFilter(getFilters()) ? 'inline-flex' : 'none'; renderHistoryList(applyFilters()); };
+  const executeSearch = () => { clearSearchBtn.style.display = hasAnyFilter(getFilters()) ? 'inline-flex' : 'none'; renderHistoryList(applyFilters()); historyList.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
   const filterCurrent = () => applyFilters();
-  clearSearchBtn.addEventListener('click', () => { searchKeyword.value = ''; searchDate.value = ''; searchContent.value = ''; searchMoodSel.value = ''; searchStarBtn.classList.remove('active'); clearSearchBtn.style.display = 'none'; renderHistoryList(allEntries); });
+  clearSearchBtn.addEventListener('click', () => { searchKeyword.value = ''; searchDate.value = ''; searchMoodSel.value = ''; searchStarBtn.classList.remove('active'); clearSearchBtn.style.display = 'none'; renderHistoryList(allEntries); });
   document.getElementById('searchBtn').addEventListener('click', executeSearch);
-  [searchKeyword, searchDate, searchContent].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') executeSearch(); }));
+  [searchKeyword, searchDate].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') executeSearch(); }));
   searchMoodSel.addEventListener('change', executeSearch);
   searchStarBtn.addEventListener('click', () => { searchStarBtn.classList.toggle('active'); executeSearch(); });
   searchDate.addEventListener('change', () => { if (searchDate.value) { const d = new Date(searchDate.value+'T00:00:00'); calYear = d.getFullYear(); calMonth = d.getMonth(); renderCalendar(); } });
@@ -515,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const stackedPages = document.querySelectorAll('.page-stacked');
 
   const switchRoot = id => {
+    if (!currentEntryId) saveDraft(); // 僅在「未存的新日記」進行中才存草稿（重新整理也能救回）
     // 如果有堆疊頁在上面，先關掉再切換
     if ([...stackedPages].some(p => p.classList.contains('pushed'))) {
       stackedPages.forEach(p => { p.classList.remove('visible','pushed'); });
@@ -548,10 +542,14 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ════════════════════════════════════════════════════
      NEW ENTRY PAGE
   ════════════════════════════════════════════════════ */
-  const openNewEntry = () => { resetNewForm(); loadDraftIfExists(); pushPage('new'); };
+  const openNewEntry = () => {
+    // 已有未存內容（且非從已存日記載入）→ 直接回到原本內容，不清空
+    if (!(entryContent.value.trim() && !currentEntryId)) { resetNewForm(); loadDraftIfExists(); }
+    pushPage('new');
+  };
   document.getElementById('btnNewEntry').addEventListener('click', openNewEntry);
   document.getElementById('btnNewEntryTopbar').addEventListener('click', openNewEntry);
-  document.getElementById('btnBackFromNew').addEventListener('click', () => { if (entryContent.value.trim()) { if (!confirm('確定要放棄目前的內容嗎？')) return; } popToRoot(); });
+  document.getElementById('btnBackFromNew').addEventListener('click', () => { if (entryContent.value.trim() && !confirm('確定要放棄目前的內容嗎？')) return; resetNewForm(); clearDraft(); popToRoot(); });
 
   /* ════════════════════════════════════════════════════
      ENTRY READ/EDIT PAGE
