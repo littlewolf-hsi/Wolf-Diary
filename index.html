@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -129,6 +130,10 @@
             <input class="field-input search-date" type="date" id="searchDate" />
             <button class="btn btn-primary search-btn" id="searchBtn"><i data-lucide="search"></i> 搜尋</button>
           </div>
+          <div class="search-filter-row">
+            <select class="field-input search-mood" id="searchMood" aria-label="依心情篩選"><option value="">所有心情</option></select>
+            <button class="search-star-toggle" id="searchStarred"><i data-lucide="star"></i> 只看加星號</button>
+          </div>
           <div class="advanced-toggle-row">
             <button class="advanced-toggle-btn" id="advancedToggleBtn">進階搜尋 ▾</button>
             <button class="btn btn-ghost scan-btn" id="clearSearchBtn" style="display:none;"><i data-lucide="x"></i> 清除篩選</button>
@@ -232,6 +237,7 @@
             <div class="field-group">
               <label class="field-label" for="entryMood">心情</label>
               <div class="mood-select-wrap"><select class="field-input" id="entryMood"></select><span class="mood-emoji-display" id="moodEmoji">—</span></div>
+              <select class="field-input mood-sub-select" id="entrySubMood" aria-label="心情細分"></select>
             </div>
             <div class="field-group">
               <label class="field-label">提問模式</label>
@@ -286,6 +292,7 @@
               <span class="overlay-mood-badge" id="entryMoodBadge"></span>
             </div>
             <div class="entry-topbar-actions">
+              <button class="overlay-action-btn entry-star-btn" id="entryStarBtn" title="加星號"><i data-lucide="star"></i></button>
               <button class="overlay-action-btn" id="entryEditBtn"><i data-lucide="pencil"></i> 編輯</button>
               <button class="overlay-action-btn overlay-action-danger" id="entryDeleteBtn"><i data-lucide="trash"></i> 刪除</button>
             </div>
@@ -310,6 +317,7 @@
             <div class="field-group">
               <label class="field-label">心情</label>
               <div class="mood-select-wrap"><select class="field-input" id="editMood"></select><span class="mood-emoji-display" id="editMoodEmoji">—</span></div>
+              <select class="field-input mood-sub-select" id="editSubMood" aria-label="心情細分"></select>
             </div>
             <div class="ai-question-box overlay-ai-q" id="editModeAiQ" style="display:none;"><p class="ai-question-text" id="editModeAiText"></p></div>
             <div class="field-group editor-group">

@@ -1062,3 +1062,39 @@ i[data-lucide] {
 /* ── Home loading ── */
 .home-loading { padding: 2rem 0; text-align: center; }
 .home-loading-text { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-hint); letter-spacing: 0.06em; }
+
+/* ════════════════════════════════════════════════════════
+   ADDED v9 — 心情細分 / 加星號 / 心情篩選
+   ════════════════════════════════════════════════════════ */
+.mood-sub-select { margin-top: 0.1rem; }
+
+/* 加星號：閱覽頁星號鈕（沿用 .overlay-action-btn 外觀，只調圖示填色） */
+.entry-star-btn { padding: 0.22rem 0.5rem; }
+.entry-star-btn svg { color: var(--text-hint); transition: color var(--t) var(--ease), fill var(--t) var(--ease); }
+.entry-star-btn:hover svg { color: var(--warn); }
+.entry-star-btn.starred svg { color: var(--warn); fill: var(--warn); }
+
+/* 加星號：列表 / 卡片上的小星 */
+.history-item-star { color: var(--warn); font-size: 0.85rem; line-height: 1; flex-shrink: 0; }
+.home-card-star { color: var(--warn); font-size: 0.8rem; line-height: 1; }
+
+/* 搜尋頁：心情 + 星號篩選列 */
+.search-filter-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 0.6rem; }
+.search-mood { flex: 0 1 auto; width: auto; min-width: 150px; }
+.search-star-toggle {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em; color: var(--text-secondary);
+  cursor: pointer; transition: all var(--t) var(--ease);
+}
+.search-star-toggle:hover { border-color: var(--warn); color: var(--warn); }
+.search-star-toggle svg { width: 0.95em; height: 0.95em; vertical-align: -0.15em; stroke: currentColor; stroke-width: 1.75; fill: none; }
+.search-star-toggle.active { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn); }
+.search-star-toggle.active svg { fill: var(--warn); }
+
+@media (max-width: 768px) {
+  .search-filter-row { flex-direction: column; align-items: stretch; }
+  .search-mood { width: 100%; min-width: 0; }
+  .search-star-toggle { justify-content: center; }
+}

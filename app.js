@@ -19,7 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const DEFAULT_SETTINGS = {
     apiBaseUrl: 'https://api.openai.com/v1',
     apiKey: '', apiModel: 'gpt-4o',
-    moodMap: { '平靜':'😌','焦慮':'🤯','疲憊':'😫','開心':'😊','感恩':'🙏','低落':'😔' },
+    moodTree: {
+      '開心': { emoji:'😊', sub:['滿足','興奮','感恩','雀躍'] },
+      '平靜': { emoji:'😌', sub:['放鬆','安定','療癒','專注'] },
+      '期待': { emoji:'🤩', sub:['盼望','好奇','躍躍欲試'] },
+      '驚訝': { emoji:'😮', sub:['意外','驚奇','震撼'] },
+      '悲傷': { emoji:'😭', sub:['失落','後悔','孤獨','無力','低落'] },
+      '疲憊': { emoji:'😫', sub:['倦怠','耗盡','想休息'] },
+      '焦慮': { emoji:'🤯', sub:['擔心','緊張','不安','煩躁'] },
+      '憤怒': { emoji:'😠', sub:['不滿','委屈','煩'] },
+    },
     promptA: '你是一個日記書寫的引導者。\n請生成一個繁體中文的引導問題，幫助使用者開始書寫日記。\n\n規則：\n- 問題聚焦在一個具體的細節、場景或感官經驗\n- 語氣平靜，不帶評價、建議或鼓勵\n- 不要問「為什麼」\n- 不要預設使用者的狀態是正面或負面的\n- 避免以「今天」開頭\n- 20 字以內\n\n風格範例：\n・最近有沒有一個瞬間，你突然不知道自己在想什麼？\n・你注意到的最近一個陌生人長什麼樣子？\n・有沒有什麼事情你做了但不確定為什麼要做？\n・最近哪個時刻你覺得最清醒？\n・你上一次獨處是在什麼情況下？',
     promptB: '你是一個日記書寫的引導者。\n使用者目前的心情為：[心情]，觸發事件或關鍵字為：[事件]。\n\n請根據以上資訊，生成一個繁體中文的引導問題。\n\n規則：\n- 問題與使用者的心情或事件有隱性關聯，但不要直接點名它\n- 聚焦在一個具體的細節、場景或感官經驗\n- 語氣平靜，不帶評價、安慰或建議\n- 不要問「為什麼」\n- 避免以「今天」開頭\n- 20 字以內',
   };
@@ -39,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const showFeedback = (id, msg, type) => { const el = document.getElementById(id); if (!el) return; el.textContent = msg; el.className = `save-feedback ${type}`; setTimeout(() => { el.textContent = ''; el.className = 'save-feedback'; }, 3500); };
   const makePreview  = t => t.trimStart().slice(0,150).replace(/#{1,6}\s/g,'').replace(/[*`>_~]/g,'').replace(/\n+/g,' ').trim();
   const updateWordCount = (content, el) => { const c = content.replace(/\s/g,'').length, l = content ? content.split('\n').length : 0; el.textContent = c > 0 ? `${c} 字 · ${l} 行` : '0 字'; };
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+  const moodBadgeText = e => `${e.mood || ''}${e.moodSub ? ' ' + e.moodSub : ''}`.trim();
 
   /* ════════════════════════════════════════════════════
      AUTH
@@ -146,7 +157,16 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ════════════════════════════════════════════════════
      SETTINGS — local (apiKey only) + cloud (rest)
   ════════════════════════════════════════════════════ */
-  const loadSettings = () => { try { const r = localStorage.getItem(LS_KEY); return r ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(r)) : JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); } catch { return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); } };
+  const isMoodTree = obj => obj && typeof obj === 'object' && !Array.isArray(obj) && Object.keys(obj).length > 0 && Object.values(obj).every(v => v && typeof v === 'object' && 'emoji' in v);
+  const migrateMoodTree = raw => isMoodTree(raw) ? raw : JSON.parse(JSON.stringify(DEFAULT_SETTINGS.moodTree));
+  const loadSettings = () => {
+    let s;
+    try { const r = localStorage.getItem(LS_KEY); s = r ? Object.assign({}, DEFAULT_SETTINGS, JSON.parse(r)) : JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
+    catch { s = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); }
+    s.moodTree = migrateMoodTree(s.moodTree || s.moodMap); // 相容：舊的扁平 moodMap 自動轉成新結構
+    delete s.moodMap;
+    return s;
+  };
   const saveLocalSettings = s => localStorage.setItem(LS_KEY, JSON.stringify(s));
 
   const loadCloudSettings = async () => {
@@ -154,53 +174,81 @@ document.addEventListener('DOMContentLoaded', () => {
     const { data } = await db.from(SETTINGS_TABLE).select('*').eq('user_id', currentUser.id).maybeSingle();
     if (!data) return;
     const local = loadSettings();
-    if (data.mood_map) local.moodMap = data.mood_map;
+    if (data.mood_map) local.moodTree = migrateMoodTree(data.mood_map);
     if (data.prompt_a) local.promptA = data.prompt_a;
     if (data.prompt_b) local.promptB = data.prompt_b;
     saveLocalSettings(local);
-    populateSettingsForm(); populateMoodSelects();
+    populateSettingsForm(); populateMoodSelects(); populateSearchMood();
   };
 
   const saveCloudSettings = async (s) => {
     if (!currentUser) return;
-    await db.from(SETTINGS_TABLE).upsert({ user_id: currentUser.id, mood_map: s.moodMap, prompt_a: s.promptA, prompt_b: s.promptB }, { onConflict: 'user_id' });
+    await db.from(SETTINGS_TABLE).upsert({ user_id: currentUser.id, mood_map: s.moodTree, prompt_a: s.promptA, prompt_b: s.promptB }, { onConflict: 'user_id' });
   };
 
   const populateSettingsForm = () => {
     const s = loadSettings();
     ['apiBaseUrl','apiKey','apiModel','promptA','promptB'].forEach(id => { const el = document.getElementById(id); if (el) el.value = s[id] || ''; });
-    document.getElementById('moodMap').value = JSON.stringify(s.moodMap, null, 2);
+    document.getElementById('moodMap').value = JSON.stringify(s.moodTree, null, 2);
   };
 
   document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
     const s = loadSettings();
     ['apiBaseUrl','apiKey','apiModel','promptA','promptB'].forEach(id => s[id] = document.getElementById(id).value.trim());
-    try { s.moodMap = JSON.parse(document.getElementById('moodMap').value); }
-    catch { showFeedback('settingsFeedback','⚠ 心情對應表 JSON 格式有誤','err'); return; }
+    try { const parsed = JSON.parse(document.getElementById('moodMap').value); if (!isMoodTree(parsed)) throw new Error('not tree'); s.moodTree = parsed; }
+    catch { showFeedback('settingsFeedback','⚠ 心情設定格式有誤，需為 {"心情":{"emoji":"😊","sub":["…"]}} 結構','err'); return; }
+    delete s.moodMap;
     saveLocalSettings(s);
     await saveCloudSettings(s);
-    populateMoodSelects();
+    populateMoodSelects(); populateSearchMood();
     showFeedback('settingsFeedback','✓ 設定已儲存','ok');
   });
 
   /* ════════════════════════════════════════════════════
      MOOD
   ════════════════════════════════════════════════════ */
-  const getMoodEmoji = name => { const { moodMap } = loadSettings(); return moodMap[name] || ''; };
-  const getMoodName  = val  => { const { moodMap } = loadSettings(); return moodMap[val] !== undefined ? val : Object.keys(moodMap).find(k => moodMap[k] === val) || val; };
-  const populateMoodSelect = (sel, emojiEl, val) => {
-    const { moodMap } = loadSettings(); sel.innerHTML = '';
-    Object.keys(moodMap).forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; sel.appendChild(o); });
-    if (val) sel.value = getMoodName(val);
-    refreshEmoji(sel, emojiEl);
+  const getTree   = () => loadSettings().moodTree;
+  const getCores  = () => Object.keys(getTree());
+  const getSubs   = core => (getTree()[core]?.sub) || [];
+  const getMoodEmoji = core => (getTree()[core]?.emoji) || '';
+  // 把任何存下來的心情值對應回它的「核心情緒」（相容舊資料：舊的細分如「感恩」曾被當 mood_name 存）
+  const coreOfName = name => {
+    if (!name) return '';
+    const tree = getTree();
+    if (tree[name]) return name;
+    for (const c of Object.keys(tree)) if ((tree[c].sub || []).includes(name)) return c;
+    return name;
   };
-  const refreshEmoji = (sel, emojiEl) => { emojiEl.textContent = getMoodEmoji(sel.value) || '—'; emojiEl.classList.remove('pop'); void emojiEl.offsetWidth; emojiEl.classList.add('pop'); setTimeout(() => emojiEl.classList.remove('pop'), 200); };
+
+  const refreshEmoji = (coreSel, emojiEl) => { emojiEl.textContent = getMoodEmoji(coreSel.value) || '—'; emojiEl.classList.remove('pop'); void emojiEl.offsetWidth; emojiEl.classList.add('pop'); setTimeout(() => emojiEl.classList.remove('pop'), 200); };
+  const fillCoreSelect = sel => { sel.innerHTML = ''; getCores().forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); }); };
+  const fillSubSelect  = (sel, core, subVal = '') => {
+    sel.innerHTML = '';
+    const none = document.createElement('option'); none.value = ''; none.textContent = '（不細分）'; sel.appendChild(none);
+    getSubs(core).forEach(sname => { const o = document.createElement('option'); o.value = sname; o.textContent = sname; sel.appendChild(o); });
+    sel.value = getSubs(core).includes(subVal) ? subVal : '';
+  };
+  const setupMoodSelect = (coreSel, subSel, emojiEl, coreVal = '', subVal = '') => {
+    fillCoreSelect(coreSel);
+    if (coreVal && getTree()[coreVal]) coreSel.value = coreVal;
+    fillSubSelect(subSel, coreSel.value, subVal);
+    refreshEmoji(coreSel, emojiEl);
+  };
   const populateMoodSelects = () => {
-    populateMoodSelect(document.getElementById('entryMood'), document.getElementById('moodEmoji'));
-    populateMoodSelect(document.getElementById('editMood'),  document.getElementById('editMoodEmoji'));
+    setupMoodSelect(document.getElementById('entryMood'), document.getElementById('entrySubMood'), document.getElementById('moodEmoji'));
+    setupMoodSelect(document.getElementById('editMood'),  document.getElementById('editSubMood'),  document.getElementById('editMoodEmoji'));
   };
-  document.getElementById('entryMood').addEventListener('change', () => refreshEmoji(document.getElementById('entryMood'), document.getElementById('moodEmoji')));
-  document.getElementById('editMood').addEventListener('change',  () => refreshEmoji(document.getElementById('editMood'),  document.getElementById('editMoodEmoji')));
+  document.getElementById('entryMood').addEventListener('change', () => { fillSubSelect(document.getElementById('entrySubMood'), document.getElementById('entryMood').value); refreshEmoji(document.getElementById('entryMood'), document.getElementById('moodEmoji')); });
+  document.getElementById('editMood').addEventListener('change',  () => { fillSubSelect(document.getElementById('editSubMood'),  document.getElementById('editMood').value);  refreshEmoji(document.getElementById('editMood'),  document.getElementById('editMoodEmoji')); });
+
+  // 搜尋頁的心情篩選下拉（依核心情緒）
+  const populateSearchMood = () => {
+    const sel = document.getElementById('searchMood'); if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">所有心情</option>';
+    getCores().forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = `${getMoodEmoji(c)} ${c}`.trim(); sel.appendChild(o); });
+    sel.value = getCores().includes(cur) ? cur : '';
+  };
 
   /* ════════════════════════════════════════════════════
      TRIGGER EVENT
@@ -216,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
      EDITOR
   ════════════════════════════════════════════════════ */
   if (typeof marked !== 'undefined') marked.setOptions({ breaks: true, gfm: true });
-  const renderMD = (src, el) => { if (typeof marked !== 'undefined') el.innerHTML = marked.parse(src || ''); };
+  const renderMD = (src, el) => { if (typeof marked === 'undefined') return; const html = marked.parse(src || ''); el.innerHTML = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(html) : html; };
   const entryContent    = document.getElementById('entryContent');
   const markdownPreview = document.getElementById('markdownPreview');
   const btnEdit = document.getElementById('btnEdit'), btnPreview = document.getElementById('btnPreview');
@@ -231,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
      DRAFT
   ════════════════════════════════════════════════════ */
   let draftTimer = null;
-  const saveDraft  = () => { if (!entryContent.value.trim()) return; try { localStorage.setItem(LS_DRAFT_KEY, JSON.stringify({ date: document.getElementById('entryDate').value, title: document.getElementById('entryTitle').value, content: entryContent.value, moodName: document.getElementById('entryMood').value })); } catch {} };
+  const saveDraft  = () => { if (!entryContent.value.trim()) return; try { localStorage.setItem(LS_DRAFT_KEY, JSON.stringify({ date: document.getElementById('entryDate').value, title: document.getElementById('entryTitle').value, content: entryContent.value, moodName: document.getElementById('entryMood').value, moodSub: document.getElementById('entrySubMood').value })); } catch {} };
   const clearDraft = () => { try { localStorage.removeItem(LS_DRAFT_KEY); } catch {} };
   const loadDraftIfExists = () => {
     try {
@@ -242,8 +290,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('entryDate').value  = d.date || getTodayStr();
         document.getElementById('entryTitle').value = d.title || '';
         entryContent.value = d.content;
-        const mn = getMoodName(d.moodName || '');
-        if (mn && loadSettings().moodMap[mn]) { document.getElementById('entryMood').value = mn; refreshEmoji(document.getElementById('entryMood'), document.getElementById('moodEmoji')); }
+        const mn = coreOfName(d.moodName || '');
+        if (mn && getTree()[mn]) {
+          document.getElementById('entryMood').value = mn;
+          fillSubSelect(document.getElementById('entrySubMood'), mn, d.moodSub || '');
+          refreshEmoji(document.getElementById('entryMood'), document.getElementById('moodEmoji'));
+        }
         updateWordCount(entryContent.value, wordCountEl); clearDraft(); banner.style.display = 'none';
         showFeedback('saveFeedback','✓ 草稿已還原','ok');
       }, { once: true });
@@ -264,8 +316,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const s = loadSettings();
     if (!s.apiKey) { promptStatus.textContent = '請先至設定填入 API Key'; promptStatus.style.color = 'var(--danger)'; return; }
     const mode = document.querySelector('input[name="promptMode"]:checked')?.value || 'A';
-    const { moodMap } = s, moodName = document.getElementById('entryMood').value;
-    const prompt = mode === 'A' ? s.promptA : s.promptB.replace('[心情]',`${moodName} ${moodMap[moodName]||''}`.trim()).replace('[事件]', trigInput.value.trim() || '未提供');
+    const moodName = document.getElementById('entryMood').value, moodSub = document.getElementById('entrySubMood').value;
+    const moodLabel = `${moodName}${moodSub ? `（${moodSub}）` : ''} ${getMoodEmoji(moodName) || ''}`.trim();
+    const prompt = mode === 'A' ? s.promptA : s.promptB.replace('[心情]', moodLabel).replace('[事件]', trigInput.value.trim() || '未提供');
     document.getElementById('generatePromptBtn').disabled = true;
     promptStatus.textContent = '正在思考中…'; promptStatus.style.color = 'var(--text-hint)';
     aiQuestionBox.style.display = 'none'; currentAiQ = '';
@@ -283,14 +336,21 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ════════════════════════════════════════════════════
      SUPABASE CRUD
   ════════════════════════════════════════════════════ */
-  const rowToEntry = row => ({
-    id: row.id, date: row.date, title: row.title,
-    moodName: getMoodName(row.mood_name || ''),
-    mood: getMoodEmoji(getMoodName(row.mood_name || '')) || row.mood_name || '',
-    aiQuestion: row.ai_question || '',
-    preview: makePreview(row.content || ''),
-    content: row.content || '',
-  });
+  const rowToEntry = row => {
+    const rawName = row.mood_name || '';
+    const core = coreOfName(rawName);
+    let sub = row.mood_sub || '';
+    if (!sub && rawName && rawName !== core) sub = rawName; // 舊資料：細分曾被存在 mood_name
+    return {
+      id: row.id, date: row.date, title: row.title,
+      moodName: core, moodSub: sub,
+      mood: getMoodEmoji(core) || rawName || '',
+      starred: !!row.starred,
+      aiQuestion: row.ai_question || '',
+      preview: makePreview(row.content || ''),
+      content: row.content || '',
+    };
+  };
 
   const loadAllEntries = async () => {
     if (!currentUser) return;
@@ -311,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     entryContent.value = ''; currentAiQ = ''; trigInput.value = '';
     aiQuestionBox.style.display = 'none'; promptStatus.textContent = '';
     document.getElementById('entryMood').selectedIndex = 0;
+    fillSubSelect(document.getElementById('entrySubMood'), document.getElementById('entryMood').value);
     refreshEmoji(document.getElementById('entryMood'), document.getElementById('moodEmoji'));
     updateWordCount('', wordCountEl); markdownPreview.innerHTML = '';
     clearDraft(); switchToEdit(); currentEntryId = null;
@@ -324,14 +385,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const title    = document.getElementById('entryTitle').value.trim() || '日記';
     const content  = entryContent.value;
     const moodName = document.getElementById('entryMood').value;
+    const moodSub  = document.getElementById('entrySubMood').value || null;
     const btn = document.getElementById('saveEntryBtn'); btn.disabled = true;
     try {
       let savedRow;
       if (currentEntryId) {
-        const { data, error } = await db.from(TABLE).update({ date, title, mood_name: moodName, ai_question: currentAiQ, content }).eq('id', currentEntryId).eq('user_id', currentUser.id).select().single();
+        const { data, error } = await db.from(TABLE).update({ date, title, mood_name: moodName, mood_sub: moodSub, ai_question: currentAiQ, content }).eq('id', currentEntryId).eq('user_id', currentUser.id).select().single();
         if (error) throw error; savedRow = data;
       } else {
-        const { data, error } = await db.from(TABLE).insert({ user_id: currentUser.id, date, title, mood_name: moodName, ai_question: currentAiQ, content }).select().single();
+        const { data, error } = await db.from(TABLE).insert({ user_id: currentUser.id, date, title, mood_name: moodName, mood_sub: moodSub, ai_question: currentAiQ, content }).select().single();
         if (error) throw error; savedRow = data; currentEntryId = savedRow.id;
       }
       clearDraft();
@@ -361,23 +423,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('advancedToggleBtn').addEventListener('click', () => { advOpen = !advOpen; document.getElementById('advancedBlock').style.display = advOpen ? 'block' : 'none'; document.getElementById('advancedToggleBtn').textContent = advOpen ? '進階搜尋 ▴' : '進階搜尋 ▾'; });
 
-  const executeSearch = () => {
-    const kw = searchKeyword.value.trim().toLowerCase(), dt = searchDate.value, ct = searchContent.value.trim().toLowerCase();
-    clearSearchBtn.style.display = (kw || dt || ct) ? 'inline-flex' : 'none';
-    renderHistoryList(allEntries.filter(e => {
-      if (kw && !e.title.toLowerCase().includes(kw)) return false;
-      if (dt && e.date !== dt) return false;
-      if (ct && !(e.content || e.preview || '').toLowerCase().includes(ct)) return false;
-      return true;
-    }));
+  const searchMoodSel = document.getElementById('searchMood');
+  const searchStarBtn = document.getElementById('searchStarred');
+  const getFilters = () => ({
+    kw: searchKeyword.value.trim().toLowerCase(),
+    dt: searchDate.value,
+    ct: searchContent.value.trim().toLowerCase(),
+    mood: searchMoodSel.value,
+    starred: searchStarBtn.classList.contains('active'),
+  });
+  const hasAnyFilter = f => !!(f.kw || f.dt || f.ct || f.mood || f.starred);
+  const matchEntry = (e, f) => {
+    if (f.kw) { const hay = `${e.title} ${e.content || e.preview || ''}`.toLowerCase(); if (!hay.includes(f.kw)) return false; } // 主關鍵字同時比對標題＋內文
+    if (f.dt && e.date !== f.dt) return false;
+    if (f.ct && !(e.content || e.preview || '').toLowerCase().includes(f.ct)) return false;
+    if (f.mood && coreOfName(e.moodName) !== f.mood) return false;
+    if (f.starred && !e.starred) return false;
+    return true;
   };
-  const filterCurrent = () => {
-    const kw = searchKeyword.value.trim().toLowerCase(), dt = searchDate.value, ct = searchContent.value.trim().toLowerCase();
-    return allEntries.filter(e => { if (kw && !e.title.toLowerCase().includes(kw)) return false; if (dt && e.date !== dt) return false; if (ct && !(e.content||e.preview||'').toLowerCase().includes(ct)) return false; return true; });
-  };
-  clearSearchBtn.addEventListener('click', () => { searchKeyword.value = ''; searchDate.value = ''; searchContent.value = ''; clearSearchBtn.style.display = 'none'; renderHistoryList(allEntries); });
+  const applyFilters  = () => allEntries.filter(e => matchEntry(e, getFilters()));
+  const executeSearch = () => { clearSearchBtn.style.display = hasAnyFilter(getFilters()) ? 'inline-flex' : 'none'; renderHistoryList(applyFilters()); };
+  const filterCurrent = () => applyFilters();
+  clearSearchBtn.addEventListener('click', () => { searchKeyword.value = ''; searchDate.value = ''; searchContent.value = ''; searchMoodSel.value = ''; searchStarBtn.classList.remove('active'); clearSearchBtn.style.display = 'none'; renderHistoryList(allEntries); });
   document.getElementById('searchBtn').addEventListener('click', executeSearch);
   [searchKeyword, searchDate, searchContent].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') executeSearch(); }));
+  searchMoodSel.addEventListener('change', executeSearch);
+  searchStarBtn.addEventListener('click', () => { searchStarBtn.classList.toggle('active'); executeSearch(); });
   searchDate.addEventListener('change', () => { if (searchDate.value) { const d = new Date(searchDate.value+'T00:00:00'); calYear = d.getFullYear(); calMonth = d.getMonth(); renderCalendar(); } });
 
   /* ════════════════════════════════════════════════════
@@ -388,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!entries.length) { historyList.innerHTML = '<p class="empty-hint">沒有符合的日記。</p>'; return; }
     entries.forEach(e => {
       const item = document.createElement('div'); item.className = 'history-item';
-      item.innerHTML = `<span class="history-item-date">${e.date}</span><span class="history-item-mood">${e.mood}</span><span class="history-item-title">${e.title}</span><span class="history-item-arrow">›</span>`;
+      item.innerHTML = `<span class="history-item-date">${esc(e.date)}</span><span class="history-item-mood">${esc(e.mood)}</span>${e.starred ? '<span class="history-item-star">★</span>' : ''}<span class="history-item-title">${esc(e.title)}</span><span class="history-item-arrow">›</span>`;
       item.addEventListener('click', () => pushEntryPage(e));
       historyList.appendChild(item);
     });
@@ -488,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const pushEntryPage = entry => {
     viewingEntry = entry;
     document.getElementById('entryDateBadge').textContent = entry.date;
-    document.getElementById('entryMoodBadge').textContent = entry.mood;
+    document.getElementById('entryMoodBadge').textContent = moodBadgeText(entry);
     document.getElementById('entryReadTitle').textContent = entry.title;
     if (entry.aiQuestion) { document.getElementById('entryAiText').textContent = entry.aiQuestion; document.getElementById('entryAiQ').style.display = 'block'; }
     else document.getElementById('entryAiQ').style.display = 'none';
@@ -498,9 +569,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('editTitle').value   = entry.title;
     document.getElementById('editContent').value = (entry.content || '').trimStart();
     updateWordCount((entry.content || '').trimStart(), document.getElementById('editWordCount'));
-    populateMoodSelect(document.getElementById('editMood'), document.getElementById('editMoodEmoji'), entry.moodName);
+    setupMoodSelect(document.getElementById('editMood'), document.getElementById('editSubMood'), document.getElementById('editMoodEmoji'), entry.moodName, entry.moodSub);
     if (entry.aiQuestion) { document.getElementById('editModeAiText').textContent = entry.aiQuestion; document.getElementById('editModeAiQ').style.display = 'block'; }
     else document.getElementById('editModeAiQ').style.display = 'none';
+    updateStarBtn();
     showEntryReadMode();
     pushPage('entry');
   };
@@ -509,6 +581,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const showEntryEditMode = () => { document.getElementById('entryReadMode').style.display = 'none'; document.getElementById('entryEditMode').style.display = ''; document.getElementById('editContent').focus(); };
 
   document.getElementById('btnBackFromEntry').addEventListener('click',   popToRoot);
+
+  // ── 加星號 ──
+  const starBtn = document.getElementById('entryStarBtn');
+  const updateStarBtn = () => { if (!starBtn) return; starBtn.classList.toggle('starred', !!viewingEntry?.starred); starBtn.title = viewingEntry?.starred ? '取消星號' : '加星號'; };
+  starBtn?.addEventListener('click', async () => {
+    if (!viewingEntry?.id) return;
+    const next = !viewingEntry.starred;
+    starBtn.disabled = true;
+    const { error } = await db.from(TABLE).update({ starred: next }).eq('id', viewingEntry.id).eq('user_id', currentUser.id);
+    starBtn.disabled = false;
+    if (error) { showFeedback('saveFeedback', `⚠ ${error.message}`, 'err'); return; }
+    viewingEntry.starred = next;
+    const idx = allEntries.findIndex(e => e.id === viewingEntry.id); if (idx !== -1) allEntries[idx].starred = next;
+    updateStarBtn(); renderHistoryList(filterCurrent()); refreshHome();
+  });
   document.getElementById('entryEditBtn').addEventListener('click',        showEntryEditMode);
   document.getElementById('btnCancelEntryEdit').addEventListener('click',  showEntryReadMode);
   document.getElementById('cancelEditBtn').addEventListener('click',       showEntryReadMode);
@@ -519,9 +606,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const title    = document.getElementById('editTitle').value.trim() || '日記';
     const content  = document.getElementById('editContent').value;
     const moodName = document.getElementById('editMood').value;
+    const moodSub  = document.getElementById('editSubMood').value || null;
     const btn = document.getElementById('saveEditBtn'); btn.disabled = true;
     try {
-      const { data, error } = await db.from(TABLE).update({ date, title, mood_name: moodName, content }).eq('id', viewingEntry.id).eq('user_id', currentUser.id).select().single();
+      const { data, error } = await db.from(TABLE).update({ date, title, mood_name: moodName, mood_sub: moodSub, content }).eq('id', viewingEntry.id).eq('user_id', currentUser.id).select().single();
       if (error) throw error;
       const updated = rowToEntry(data);
       const idx = allEntries.findIndex(e => e.id === updated.id);
@@ -529,8 +617,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderHistoryList(filterCurrent()); renderCalendar(); refreshHome(); renderStats();
       viewingEntry = updated;
       document.getElementById('entryDateBadge').textContent = updated.date;
-      document.getElementById('entryMoodBadge').textContent = updated.mood;
+      document.getElementById('entryMoodBadge').textContent = moodBadgeText(updated);
       document.getElementById('entryReadTitle').textContent  = updated.title;
+      updateStarBtn();
       renderMD((updated.content || '').trimStart(), document.getElementById('entryReadBody'));
       showFeedback('editFeedback','✓ 已儲存','ok');
       setTimeout(showEntryReadMode, 600);
@@ -573,10 +662,11 @@ document.addEventListener('DOMContentLoaded', () => {
   ════════════════════════════════════════════════════ */
   const calcStreak = entries => {
     const dates = [...new Set(entries.map(e => e.date))].sort().reverse(); if (!dates.length) return 0;
+    const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     const today = getTodayStr(), check = new Date(today+'T00:00:00');
     if (dates[0] !== today) check.setDate(check.getDate()-1);
     let s = 0;
-    for (const d of dates) { const cs = check.toISOString().slice(0,10); if (d===cs) { s++; check.setDate(check.getDate()-1); } else if (d<cs) break; }
+    for (const d of dates) { const cs = fmt(check); if (d===cs) { s++; check.setDate(check.getDate()-1); } else if (d<cs) break; }
     return s;
   };
   const calcMaxStreak = entries => {
@@ -603,12 +693,12 @@ document.addEventListener('DOMContentLoaded', () => {
     card.className = `home-card${entry.date===getTodayStr()?' home-card-today':''}`;
     card.innerHTML = `
       <div class="home-card-header">
-        ${label?`<span class="home-card-ago">${label}</span>`:''}
-        <span class="home-card-date">${entry.date}</span>
-        <span class="home-card-mood">${entry.mood}</span>
+        ${label?`<span class="home-card-ago">${esc(label)}</span>`:''}
+        <span class="home-card-date">${esc(entry.date)}</span>
+        <span class="home-card-mood">${esc(entry.mood)}</span>
       </div>
-      <div class="home-card-title">${entry.title}</div>
-      ${entry.preview?`<div class="home-card-preview">${entry.preview}${entry.preview.length>=148?'…':''}</div>`:''}`;
+      <div class="home-card-title">${entry.starred?'<span class="home-card-star">★</span> ':''}${esc(entry.title)}</div>
+      ${entry.preview?`<div class="home-card-preview">${esc(entry.preview)}${entry.preview.length>=148?'…':''}</div>`:''}`;
     card.addEventListener('click', () => pushEntryPage(entry));
     return card;
   };
@@ -658,7 +748,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderStats = () => {
     const container=document.getElementById('statsContent');
     if(!allEntries.length){container.innerHTML='<p class="empty-hint">還沒有日記，開始書寫後這裡會出現統計。</p>';return;}
-    const{moodMap}=loadSettings();
     const total=allEntries.length,streak=calcStreak(allEntries),maxStreak=calcMaxStreak(allEntries);
     const monthMap=new Map();allEntries.forEach(e=>{const m=e.date.slice(0,7);monthMap.set(m,(monthMap.get(m)||0)+1);});
     const months=[...monthMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
@@ -666,7 +755,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bestM=months.reduce((a,b)=>b[1]>a[1]?b:a,months[0]);
     const weekMap=[0,0,0,0,0,0,0];allEntries.forEach(e=>{weekMap[new Date(e.date+'T00:00:00').getDay()]++;});
     const maxW=Math.max(...weekMap,1);
-    const moodCount=new Map();allEntries.forEach(e=>{const k=e.moodName||e.mood;moodCount.set(k,(moodCount.get(k)||0)+1);});
+    const moodCount=new Map();allEntries.forEach(e=>{const k=e.moodName||'—';moodCount.set(k,(moodCount.get(k)||0)+1);});
     const moodEntries=[...moodCount.entries()].sort((a,b)=>b[1]-a[1]);
     const sortedAsc=[...allEntries].sort((a,b)=>a.date.localeCompare(b.date));
     const milestoneDate=n=>sortedAsc[n-1]?.date||'';
@@ -684,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${weekMap.map((c,i)=>`<div class="stats-bar-col"><div class="stats-bar-wrap"><div class="stats-bar stats-bar-week" style="height:${Math.round((c/maxW)*100)}%"></div></div><span class="stats-bar-label">${['日','一','二','三','四','五','六'][i]}</span><span class="stats-bar-count">${c}</span></div>`).join('')}
       </div></div>
       <div class="stats-section"><div class="stats-section-label">心情分佈</div><div class="stats-mood-list">
-        ${moodEntries.map(([name,count])=>`<div class="stats-mood-row"><span class="stats-mood-emoji">${moodMap[name]||name}</span><span class="stats-mood-name">${moodMap[name]?name:''}</span><div class="stats-mood-bar-wrap"><div class="stats-mood-bar" style="width:${Math.round((count/total)*100)}%"></div></div><span class="stats-mood-count">${count} 篇</span></div>`).join('')}
+        ${moodEntries.map(([name,count])=>{const em=getMoodEmoji(name);return `<div class="stats-mood-row"><span class="stats-mood-emoji">${esc(em||name)}</span><span class="stats-mood-name">${esc(em?name:'')}</span><div class="stats-mood-bar-wrap"><div class="stats-mood-bar" style="width:${Math.round((count/total)*100)}%"></div></div><span class="stats-mood-count">${count} 篇</span></div>`}).join('')}
       </div></div>
       <div class="stats-section"><div class="stats-section-label">里程碑</div>
         ${(() => {
@@ -745,7 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const year    = e.date.slice(0, 4);
         const yearMonth = e.date.slice(0, 7);
         const fileName  = `${e.date}.md`;
-        const md = ['---',`標題: ${e.title}`,`日期: ${e.date}`,`心情: ${e.moodName||''}`,`AI 題目: ${e.aiQuestion||''}`,'---','',e.content||''].join('\n');
+        const md = ['---',`標題: ${e.title}`,`日期: ${e.date}`,`心情: ${e.moodName||''}`,`心情細分: ${e.moodSub||''}`,`加星號: ${e.starred?'是':''}`,`AI 題目: ${e.aiQuestion||''}`,'---','',e.content||''].join('\n');
         root.folder(year).folder(yearMonth).file(fileName, md);
       });
       const blob = await zip.generateAsync({ type: 'blob' });
@@ -776,13 +865,15 @@ document.addEventListener('DOMContentLoaded', () => {
       for (const entry of mdFiles) {
         const raw  = await entry.async('string');
         const m    = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-        let date = '', title = '', moodName = '', aiQuestion = '', content = raw;
+        let date = '', title = '', moodName = '', moodSub = '', starred = false, aiQuestion = '', content = raw;
         if (m) {
           const meta = {};
           m[1].split('\n').forEach(l => { const i=l.indexOf(':'); if(i!==-1) meta[l.slice(0,i).trim()]=l.slice(i+1).trim(); });
           date       = meta['日期'] || '';
           title      = meta['標題'] || '';
-          moodName   = getMoodName(meta['心情'] || '');
+          moodName   = meta['心情'] || '';
+          moodSub    = meta['心情細分'] || '';
+          starred    = meta['加星號'] === '是';
           aiQuestion = meta['AI 題目'] || '';
           content    = m[2].trimStart();
         }
@@ -792,7 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!date) { skipped++; continue; }
         const key = `${date}|${title}`;
         if (existingKeys.has(key)) { skipped++; continue; }
-        const { data, error } = await db.from(TABLE).insert({ user_id: currentUser.id, date, title, mood_name: moodName, ai_question: aiQuestion, content }).select().single();
+        const { data, error } = await db.from(TABLE).insert({ user_id: currentUser.id, date, title, mood_name: moodName, mood_sub: moodSub || null, starred, ai_question: aiQuestion, content }).select().single();
         if (!error && data) { allEntries.push(rowToEntry(data)); existingKeys.add(key); imported++; }
         else skipped++;
       }
@@ -809,7 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
   document.getElementById('sidebarDate').textContent = `${now.getFullYear()} · ${String(now.getMonth()+1).padStart(2,'0')} · ${String(now.getDate()).padStart(2,'0')}`;
   trigGroup.style.display = 'none'; trigGroup.classList.remove('visible');
-  populateSettingsForm(); populateMoodSelects();
+  populateSettingsForm(); populateMoodSelects(); populateSearchMood();
   switchToEdit(); markdownPreview.style.display = 'none';
   renderCalendar();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
