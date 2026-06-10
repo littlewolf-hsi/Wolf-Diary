@@ -1,6 +1,7 @@
 # 🐺 WOLF．DIARY 使用說明
 
 歡迎來到WOLF．DIARY。
+
 點擊網址，開始書寫你的故事：https://wolf-diary.vercel.app/
 
 ---
